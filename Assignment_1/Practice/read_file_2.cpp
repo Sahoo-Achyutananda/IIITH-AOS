@@ -30,6 +30,7 @@ int main(int argc, char* argv[]){
     }
     // error handling : checking start_offset out of bound !
     off_t fileSize = lseek(fileDesc, 0, SEEK_END);
+    std::cout << fileSize << "......" << std::endl;
     if(start >= fileSize){
         std::cerr << "Start offset is beyond end of the file. \n";
         close(fileDesc);
@@ -55,16 +56,13 @@ int main(int argc, char* argv[]){
     ssize_t bytesRead;
 
     lseek(fileDesc, start, SEEK_SET); //moving to the start offset
-
-    do{
-        bytesRead = read(fileDesc, buffer, bufferSize);
-        write(STDOUT_FILENO, buffer, bytesRead); 
-    }while(bytesRead > 0);
-
+    bytesRead = read(fileDesc, buffer, bufferSize);
+    
     if(bytesRead < 0){
         std::cerr << "Error Reading File : " << strerror(errno) << "\n";
     }
-
+    write(STDOUT_FILENO, buffer, bytesRead);
+    std::cout << "\n" ;
     close(fileDesc); // closing the file
     return 0;
 
