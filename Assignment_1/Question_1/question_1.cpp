@@ -3,6 +3,9 @@
 #include<unistd.h>
 #include<fcntl.h>
 #include<errno.h>
+#include<sys/stat.h>
+
+using namespace std;
 
 const int bufferSize = 4096;
 void throwError();
@@ -68,16 +71,20 @@ void reverseBuffer(char *buffer, unsigned long long size){
     }
 }
 
-void reverseBlocks(char *fileName, unsigned long long blockSize){
-    ssize_t fileDescRead = open(fileName, O_RDONLY); 
+void reverseBlocks(char *name, unsigned long long blockSize){
+    string fileName = name;
+    ssize_t fileDescRead = open(fileName.c_str(), O_RDONLY); 
     if(fileDescRead < 0){
         std::cerr << "Error Opening Source File : " << strerror(errno) << "\n";
         return;
     }
 
-    ssize_t fileDescWrite = open("output.txt", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);// create a new file to write the reversed version of the source file
+    string outputPath = "Assignment1/0_" + fileName;
+    mkdir("Assignment1", 0777); // 0777 - grants full permission - (read, write, and execute)
+    ssize_t fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);// create a new file to write the reversed version of the source file
     if(fileDescWrite < 0){
-        std::cerr << "Error Creating DEstination File : " << strerror(errno) << "\n";
+        std::cerr << "Error Creating Destination File : " << strerror(errno) << "\n";
+        close(fileDescRead);
         return;
     }
 
@@ -88,16 +95,24 @@ void reverseBlocks(char *fileName, unsigned long long blockSize){
         close(fileDescWrite);
         return;
     }
-    int size = 0;
-    unsigned long long remaining = fileSize;
-    if(blockSize < bufferSize){
-        size = blockSize;   
-    }else{
-        size = bufferSize; // standard 4096 buffer size
+
+    char buffer[blockSize];
+    unsigned long long bytesRead;
+    do{
+        bytesRead = read(fileDescRead,buffer,blockSize);
+        reverseBuffer(buffer, blockSize);
+        write(fileDescWrite,buffer,bytesRead);
+    }while(bytesRead > 0);
+
+    if(bytesRead < 0){
+        cerr<< "Error reading Source File : " << strerror(errno) << "\n";
     }
-    char buffer[size];
-    // we need to reverse the file block by block
-    // 1. set cursor to 
+
+    close(fileDescRead);
+    close(fileDescWrite);
+
+    cout << "File writing completed !" << "\n";
+    
 }
 void reverseComplete(char * fileName){
     ssize_t fileDescRead = open(fileName, O_RDONLY); 
