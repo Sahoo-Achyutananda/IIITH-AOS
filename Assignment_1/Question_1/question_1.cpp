@@ -11,7 +11,8 @@ const int bufferSize = 4096;
 void throwError();
 void reverseBuffer(char *buffer, unsigned long long size);
 void reverseComplete(char* fileName);
-void reverseBlocks(char* fileName, unsigned long long blockSize);
+void reverseBlocks(char* name, unsigned long long blockSize);
+void reverseRange(char* name, unsigned long long startIndex, unsigned long long endIndex);
 
 int main(int argc, char* argv[]){
     // command format - ./a.out <input file name> <flag> => total count = 3
@@ -34,19 +35,23 @@ int main(int argc, char* argv[]){
     int startIndex = 0;
     int endIndex = 0;
 
-    if(flag == 0 && argc == 4){  
-        blockSize = std::atoi(argv[3]); // assigning block
-    }else{
-        throwError();
-        return 1;
+    if(flag == 0){  
+        if(argc == 4){
+            blockSize = std::atoi(argv[3]); // assigning block
+        }else{
+            throwError();
+            return 1;
+        }
     }
 
-    if(flag == 3 && argc == 5){
-        startIndex = std::atoi(argv[3]);
-        endIndex = std::atoi(argv[4]);
-    }else{
-        throwError();
-        return 1;
+    if(flag == 3){
+        if(argc == 5){
+            startIndex = std::atoi(argv[3]);
+            endIndex = std::atoi(argv[4]);
+        }else{
+            throwError();
+            return 1;
+        }
     }
 
     switch(flag){
@@ -57,12 +62,13 @@ int main(int argc, char* argv[]){
             reverseComplete(fileName);
             break;
         case 2 :
+            reverseRange(fileName, startIndex, endIndex);
             break;
     }
 }
 
 void throwError(){
-    std::cerr<<"Command Format : ./a.out <input_file_name> <flag : 0 | 1 | 2 > [offset] | [start_index] [end_index]";
+    std::cerr<<"Command Format : ./a.out <input_file_name> <flag : 0 | 1 | 2 > [offset] | [start_index] [end_index] \n";
 }
 
 void reverseBuffer(char *buffer, unsigned long long size){
@@ -73,7 +79,7 @@ void reverseBuffer(char *buffer, unsigned long long size){
 
 void reverseBlocks(char *name, unsigned long long blockSize){
     string fileName = name;
-    ssize_t fileDescRead = open(fileName.c_str(), O_RDONLY); 
+    unsigned long long fileDescRead = open(fileName.c_str(), O_RDONLY); 
     if(fileDescRead < 0){
         std::cerr << "Error Opening Source File : " << strerror(errno) << "\n";
         return;
@@ -81,7 +87,7 @@ void reverseBlocks(char *name, unsigned long long blockSize){
 
     string outputPath = "Assignment1/0_" + fileName;
     mkdir("Assignment1", 0777); // 0777 - grants full permission - (read, write, and execute)
-    ssize_t fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);// create a new file to write the reversed version of the source file
+    unsigned long long fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);// create a new file to write the reversed version of the source file
     if(fileDescWrite < 0){
         std::cerr << "Error Creating Destination File : " << strerror(errno) << "\n";
         close(fileDescRead);
@@ -95,12 +101,12 @@ void reverseBlocks(char *name, unsigned long long blockSize){
         close(fileDescWrite);
         return;
     }
-
+    lseek(fileDescRead, 0, SEEK_SET);
     char buffer[blockSize];
     unsigned long long bytesRead;
     do{
-        bytesRead = read(fileDescRead,buffer,blockSize);
-        reverseBuffer(buffer, blockSize);
+        bytesRead = read(fileDescRead,buffer,blockSize); // Note : the cursor is automatically moved one byte at a time in the write operation, therefore lseek is not needed !
+        reverseBuffer(buffer, bytesRead);
         write(fileDescWrite,buffer,bytesRead);
     }while(bytesRead > 0);
 
@@ -114,6 +120,7 @@ void reverseBlocks(char *name, unsigned long long blockSize){
     cout << "File writing completed !" << "\n";
     
 }
+
 void reverseComplete(char * fileName){
     ssize_t fileDescRead = open(fileName, O_RDONLY); 
     if(fileDescRead < 0){
@@ -164,4 +171,32 @@ void reverseComplete(char * fileName){
     close(fileDescRead);
     close(fileDescWrite);
     return;
+}
+
+void reverseRange(char* name, unsigned long long startIndex, unsigned long long endIndex){
+    string fileName = name;
+    unsigned long long fileDescRead = open(fileName.c_str(), O_RDONLY); 
+    if(fileDescRead < 0){
+        std::cerr << "Error Opening Source File : " << strerror(errno) << "\n";
+        return;
+    }
+
+    string outputPath = "Assignment1/0_" + fileName;
+    mkdir("Assignment1", 0777); // 0777 - grants full permission - (read, write, and execute)
+    unsigned long long fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);// create a new file to write the reversed version of the source file
+    if(fileDescWrite < 0){
+        std::cerr << "Error Creating Destination File : " << strerror(errno) << "\n";
+        close(fileDescRead);
+        return;
+    }
+
+    unsigned long long fileSize = lseek(fileDescRead, 0 ,SEEK_END);
+    if(fileSize < 0){
+        std::cerr << "Error retrieving File Size : " << strerror(errno) << "\n";
+        close(fileDescRead);
+        close(fileDescWrite);
+        return;
+    }
+    lseek(fileDescRead, 0, SEEK_SET);
+    char buffer[bufferSize];
 }
