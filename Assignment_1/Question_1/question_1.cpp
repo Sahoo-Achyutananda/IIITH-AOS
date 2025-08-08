@@ -121,14 +121,16 @@ void reverseBlocks(char *name, unsigned long long blockSize){
     
 }
 
-void reverseComplete(char * fileName){
-    ssize_t fileDescRead = open(fileName, O_RDONLY); 
-    if(fileDescRead < 0){
+void reverseComplete(char * name){
+    long long fileDescRead = open(name, O_RDONLY); 
+    if (fileDescRead < 0) {
         std::cerr << "Error Opening Source File : " << strerror(errno) << "\n";
         return;
     }
+    string outputPath = "Assignment1/1_" + string(name);
+    mkdir("Assignment1", 0777); 
 
-    ssize_t fileDescWrite = open("output.txt", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);// create a new file to write the reversed version of the source file
+    long long fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);// create a new file to write the reversed version of the source file
     if(fileDescWrite < 0){
         std::cerr << "Error Creating DEstination File : " << strerror(errno) << "\n";
         return;
@@ -150,13 +152,13 @@ void reverseComplete(char * fileName){
 
         lseek(fileDescRead, offset, SEEK_SET);
 
-        ssize_t bytesRead = read(fileDescRead, buffer, toRead);
+        long long bytesRead = read(fileDescRead, buffer, toRead);
         if (bytesRead < 0) {
             std::cerr << "Error reading input: " << strerror(errno) << "\n";
             break;
         }
         reverseBuffer(buffer, bytesRead);
-        ssize_t bytesWritten = write(fileDescWrite, buffer, bytesRead);
+        long long bytesWritten = write(fileDescWrite, buffer, bytesRead);
         if (bytesWritten < 0) {
             std::cerr << "Error writing to output: " << strerror(errno) << "\n";
             break;
