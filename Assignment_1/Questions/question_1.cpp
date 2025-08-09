@@ -167,7 +167,7 @@ void reverseBlocks(char *name, unsigned long long blockSize){
         cerr<< "Error reading Source File : " << strerror(errno) << "\n";
     }
 
-    cout << "\nFile writing completed !" << "\n";
+    cout << "File writing completed !" << "\n";
     delete [] buffer;
     close(fileDescRead);
     close(fileDescWrite);
