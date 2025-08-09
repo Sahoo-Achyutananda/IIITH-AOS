@@ -156,6 +156,7 @@ void reverseBlocks(char *name, unsigned long long blockSize){
     unsigned long long bytesProcessed = 0;
     while(bytesRead > 0){
         bytesRead = read(fileDescRead,buffer,blockSize); // Note : the cursor is automatically moved one byte at a time in the write operation, therefore lseek is not needed !
+        if(bytesRead <= 0) break; 
         reverseBuffer(buffer, bytesRead);
         write(fileDescWrite,buffer,bytesRead); 
         bytesProcessed+=bytesRead;
