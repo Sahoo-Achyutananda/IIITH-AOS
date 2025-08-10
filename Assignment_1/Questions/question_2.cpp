@@ -12,10 +12,8 @@ bool checkSimilar(char * block1, char* block2, long long blockSize);
 void reverseBlock(char * block, unsigned long long blockSize);
 bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long long blockSize);
 bool verifyFlag1(char * modifiedFilePath, char * originalFilePath);
-void verifyFlag2(char * modifiedFilePath, char * originalFilePath, long long startOffset, long long endOffset){
-    cout << "HI" << endl;
-};
-
+bool verifyFlag2(char * modifiedFilePath, char * originalFilePath, long long startOffset, long long endOffset);
+bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset, unsigned long long length, bool checkReversed);
 int main(int argc, char * argv[]){
     // format : ./a.out <newfilepath> <oldfilepath> <directory> <flag> [<blockSize>|<start> <end>]
     char *modifiedFilePath = argv[1];
@@ -43,7 +41,11 @@ int main(int argc, char * argv[]){
 
             break;
         case 1:
-            verifyFlag1(modifiedFilePath, originalFilePath);
+            if(verifyFlag1(modifiedFilePath, originalFilePath)){
+                cout << "Whether file contents are correctly processed : YES" << endl;
+            }else{
+                cout << "Whether file contents are correctly processed : NO" << endl;
+            }
             break;
         case 2:
             verifyFlag2(modifiedFilePath, originalFilePath, startOffset, endOffset);
@@ -185,10 +187,8 @@ bool verifyFlag1(char * modifiedFilePath, char * originalFilePath) {
             result = false;
             break;
         }
-
         orgPos += toRead;
     }
-
     delete[] bufferModified;
     delete[] bufferOriginal;
     close(fileDescModifiedFile);
@@ -197,60 +197,80 @@ bool verifyFlag1(char * modifiedFilePath, char * originalFilePath) {
     return result;
 }
 
-// bool verifyFlag1(char * modifiedFilePath, char * originalFilePath){
-//     long long fileDescModifiedFile = open(modifiedFilePath, O_RDONLY);
-//     long long fileDescOriginalFile = open(originalFilePath, O_RDONLY);
+bool verifyFlag2(char * modifiedFilePath, char * originalFilePath, long long startOffset, long long endOffset){
+    int fileDescModifiedFile = open(modifiedFilePath, O_RDONLY);
+    int fileDescOriginalFile = open(originalFilePath, O_RDONLY);
     
-//     if(fileDescModifiedFile < 0){ 
-//         cerr << "Error Reading Modofied File " << strerror(errno) << endl;
-//         return false;
-//     }
-//     if(fileDescOriginalFile < 0){ 
-//         cerr << "Error Reading Original File " << strerror(errno) << endl;
-//         return false;
-//     }
+    if (fileDescModifiedFile < 0) { 
+        cerr << "Error Reading Modified File: " << strerror(errno) << endl;
+        return false;
+    }
+    if (fileDescOriginalFile < 0) { 
+        cerr << "Error Reading Original File: " << strerror(errno) << endl;
+        return false;
+    }
 
-//     unsigned long long fileSizeModified = lseek(fileDescModifiedFile, 0, SEEK_END);
-//     unsigned long long fileSizeOriginal = lseek(fileDescOriginalFile, 0, SEEK_END);
-//     lseek(fileDescModifiedFile, 0, SEEK_SET);
-//     lseek(fileDescModifiedFile, 0, SEEK_SET);
-//     if(fileSizeModified != fileSizeOriginal){
-//         cout << "File Size are same : NO" << endl;
-//         close(fileDescModifiedFile);
-//         close(fileDescOriginalFile);
-//         return false;
-//     }else{
-//         cout << "File Size are same : YES" << endl;
-//     }
+    unsigned long long fileSizeModified = lseek(fileDescModifiedFile, 0, SEEK_END);
+    unsigned long long fileSizeOriginal = lseek(fileDescOriginalFile, 0, SEEK_END);
 
-//     char * bufferModified = new char[bufferSize];
-//     char * bufferOriginal = new char[bufferSize];
-//     unsigned long long orgPos = 0;
-//     unsigned long long revPos = fileSizeModified;
-//     bool result = true;
-//     while(orgPos < fileDescOriginalFile){
+    lseek(fileDescModifiedFile, 0, SEEK_SET);
+    lseek(fileDescOriginalFile, 0, SEEK_SET);
+
+    if (fileSizeModified != fileSizeOriginal) {
+        cout << "File Size are same : NO" << endl;
+        close(fileDescModifiedFile);
+        close(fileDescOriginalFile);
+        return false;
+    } else {
+        cout << "File Size are same : YES" << endl;
+    }
+
+    bool isValid = verifyRegion(fileDescOriginalFile, fileDescModifiedFile,0, startOffset, true);
+
+    if(isValid){
+        isValid = verifyRegion(fileDescOriginalFile, fileDescModifiedFile,startOffset, endOffset - startOffset + 1 , false);
+    }
+
+    if(isValid){
+        isValid = verifyRegion(fileDescOriginalFile, fileDescModifiedFile,endOffset+1, fileSizeModified-endOffset-1, true);
+    }
+
+    close(fileDescModifiedFile);
+    close(fileDescOriginalFile);
+
+    return isValid;
+}
+
+
+bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset, unsigned long long length, bool checkReversed){
+    char * bufferOrg = new char[bufferSize];
+    char * bufferMod = new char[bufferSize];
+
+    unsigned long long remaining = length;
+    unsigned long long orgPos = offset;
+    unsigned long long modPos = offset;
+
+    while(remaining > 0){
+        unsigned long long toRead = min(bufferSize, remaining);
         
-//         unsigned long long toRead = min(bufferSize, fileSizeOriginal-orgPos);
-//         lseek(fileDescOriginalFile, orgPos, SEEK_SET);
-//         unsigned long long bytesRead = read(fileDescOriginalFile, bufferOriginal, toRead);
+        //read block from the original file
+        lseek(fdOrg, orgPos, SEEK_SET);
+        unsigned long long bytesRead = read(fdOrg, bufferOrg, toRead);
+        if(bytesRead != toRead) return false;
 
-//         revPos-=toRead;
-//         lseek(fileDescModifiedFile, revPos, SEEK_SET);
-//         bytesRead = read(fileDescModifiedFile, bufferModified, toRead);
+        // read block from the modified file
+        lseek(fdMod, modPos, SEEK_SET);
+        bytesRead = read(fdOrg, bufferOrg, toRead);
+        if(bytesRead != toRead) return false;
 
-//         reverseBlock(bufferOriginal, toRead);
-//         if(!checkSimilar(bufferModified, bufferOriginal, toRead)){
-//             result = false;
-//             break;
-//         }
-//         orgPos+=toRead;
-//     }
-//     delete [] bufferModified;
-//     delete [] bufferOriginal;
-//     close(fileDescModifiedFile);
-//     close(fileDescOriginalFile);
-//     return result;
-// }
+        if(checkReversed) reverseBlock(bufferOrg, toRead);
+        if(checkSimilar(bufferMod, bufferOrg, toRead) != 0)return false;
 
+        orgPos += toRead;
+        modPos += toRead;
+        remaining-=toRead;
+    }
 
+    return true;
 
+}
