@@ -83,11 +83,11 @@ void showProgress(unsigned long long processed, unsigned long long total) {
     const int barWidth = 50;
     static bool firstCall = true;
     
-    // Hide cursor on first call
-    if (firstCall) {
-        std::cout << "\033[?25l"; // Hide cursor
-        firstCall = false;
-    }
+    // // Hide cursor on first call
+    // if (firstCall) {
+    //     std::cout << "\033[?25l"; // Hide cursor
+    //     firstCall = false;
+    // }
 
     const char* done = "█";
     const char* beingProcessed = ">";
@@ -96,6 +96,7 @@ void showProgress(unsigned long long processed, unsigned long long total) {
     float progress = (float)processed / total;
     progress = std::min(1.0f, progress); // Clamp to 100%
     int pos = barWidth * progress;
+    std::cout << "\r\033[K";
     
     std::cout << "Processing... [";
     for (int i = 0; i < barWidth; ++i) {
@@ -107,10 +108,10 @@ void showProgress(unsigned long long processed, unsigned long long total) {
               << processed << "/" << total << ")\r";
     std::cout.flush();
     
-    // Show cursor and newline when complete
-    if (progress >= 1.0f) {
-        std::cout << "\033[?25h" << std::endl;
-    }
+    // // Show cursor and newline when complete
+    // if (progress >= 1.0f) {
+    //     std::cout << "\033[?25h" << std::endl;
+    // }
 }
 
 void reverseBuffer(char *buffer, unsigned long long size){
