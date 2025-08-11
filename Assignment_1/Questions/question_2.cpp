@@ -14,6 +14,7 @@ bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long
 bool verifyFlag1(char * modifiedFilePath, char * originalFilePath);
 bool verifyFlag2(char * modifiedFilePath, char * originalFilePath, long long startOffset, long long endOffset);
 bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset, unsigned long long length, bool checkReversed);
+void checkPermissions(char * filePath);
 int main(int argc, char * argv[]){
     // format : ./a.out <newfilepath> <oldfilepath> <directory> <flag> [<blockSize>|<start> <end>]
     char *modifiedFilePath = argv[1];
@@ -54,6 +55,45 @@ int main(int argc, char * argv[]){
             cout << "Invalid Flag" << endl;
             break;
     }
+
+    checkPermissions(modifiedFilePath);
+    checkPermissions(originalFilePath);
+    checkPermissions(directory);
+}
+
+void showProgress(unsigned long long processed, unsigned long long total) {
+    const int barWidth = 50;
+    static bool firstCall = true;
+    
+
+    // if (firstCall) {
+    //     std::cout << "\033[?25l"; // Hide cursor
+    //     firstCall = false;
+    // }
+
+    const char* done = "█";
+    const char* beingProcessed = ">";
+    const char* notDone = " ";
+
+    float progress = (float)processed / total;
+    progress = std::min(1.0f, progress); // Clamp to 100%
+    int pos = barWidth * progress;
+    std::cout << "\r\033[K";
+    
+    std::cout << "Processing... [";
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos) std::cout << done;
+        else if (i == pos) std::cout << beingProcessed;
+        else std::cout << notDone;
+    }
+    std::cout << "] " << int(progress * 100.0) << "% (" 
+              << processed << "/" << total << ")\r";
+    std::cout.flush();
+    
+
+    // if (progress >= 1.0f) {
+    //     std::cout << "\033[?25h" << std::endl;
+    // }
 }
 
 bool checkSimilar(char* block1, char* block2, long long blockSize){
@@ -91,6 +131,8 @@ bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long
     char * bufferOriginal = new char[blockSize];
     // 4. compare the buffers
     bool result = true;
+    unsigned long long bytesProcessed = 0;
+    unsigned long long fileSize = lseek(fileDescOriginalFile, 0, SEEK_END);
     while(true){
         unsigned long long bytesModified = read(fileDescModifiedFile, bufferModified, blockSize);
         unsigned long long bytesOriginal = read(fileDescOriginalFile, bufferOriginal, blockSize);
@@ -108,6 +150,9 @@ bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long
             result = false;
             break;
         }
+
+        bytesProcessed+=bytesModified;
+        showProgress(bytesProcessed, fileSize);
     }
     // 5. return 
     delete [] bufferModified;
@@ -188,6 +233,7 @@ bool verifyFlag1(char * modifiedFilePath, char * originalFilePath) {
             break;
         }
         orgPos += toRead;
+        showProgress(orgPos, fileSizeOriginal);
     }
     delete[] bufferModified;
     delete[] bufferOriginal;
@@ -232,7 +278,7 @@ bool verifyFlag2(char * modifiedFilePath, char * originalFilePath, long long sta
     }
 
     if(isValid){
-        isValid = verifyRegion(fileDescOriginalFile, fileDescModifiedFile,endOffset+1, fileSizeModified-endOffset-1, true);
+        isValid = verifyRegion(fileDescOriginalFile, fileDescModifiedFile,endOffset+1, fileSizeOriginal, fileSizeModified-endOffset-1, true);
     }
 
     close(fileDescModifiedFile);
@@ -242,7 +288,7 @@ bool verifyFlag2(char * modifiedFilePath, char * originalFilePath, long long sta
 }
 
 
-bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset, unsigned long long length, bool checkReversed){
+bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset,unsigned long long fileSize, unsigned long long length, bool checkReversed){
     char * bufferOrg = new char[bufferSize];
     char * bufferMod = new char[bufferSize];
 
@@ -268,9 +314,46 @@ bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset, u
 
         orgPos += toRead;
         modPos += toRead;
+        showProgress(orgPos, fileSize);
         remaining-=toRead;
     }
 
     return true;
+
+}
+
+void checkPermissions(char * filePath){
+    struct stat fileStat;
+    long long statCall = stat(filePath, &fileStat);
+    
+    if(statCall < 0){
+        cout << strerror(errno) << endl;
+        return;
+    }
+
+    // User Permission Check
+    std::cout << "User has read permissions on " << filePath << ": "
+              << ((fileStat.st_mode & S_IRUSR) ? "Yes" : "No") << "\n";
+    std::cout << "User has write permission on " << filePath << ": "
+              << ((fileStat.st_mode & S_IWUSR) ? "Yes" : "No") << "\n";
+    std::cout << "User has execute permission on " << filePath << ": "
+              << ((fileStat.st_mode & S_IXUSR) ? "Yes" : "No") << "\n";
+
+    // Group Permission Check
+    std::cout << "Group has read permissions on " << filePath << ": "
+              << ((fileStat.st_mode & S_IRGRP) ? "Yes" : "No") << "\n";
+    std::cout << "Group has write permission on " << filePath << ": "
+              << ((fileStat.st_mode & S_IWGRP) ? "Yes" : "No") << "\n";
+    std::cout << "Group has execute permission on " << filePath << ": "
+              << ((fileStat.st_mode & S_IXGRP) ? "Yes" : "No") << "\n";
+
+    // Permission Check on Others
+    std::cout << "Others has read permissions on " << filePath << ": "
+              << ((fileStat.st_mode & S_IROTH) ? "Yes" : "No") << "\n";
+    std::cout << "Others has write permission on " << filePath << ": "
+              << ((fileStat.st_mode & S_IWOTH) ? "Yes" : "No") << "\n";
+    std::cout << "Others has execute permission on " << filePath << ": "
+              << ((fileStat.st_mode & S_IXOTH) ? "Yes" : "No") << "\n";
+
 
 }

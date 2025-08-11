@@ -185,9 +185,9 @@ void reverseComplete(char * name){
         return;
     }
     string outputPath = "Assignment1/1_" + string(name);
-    mkdir("Assignment1", 0777); 
+    mkdir("Assignment1", 0700); // directory : only user has permission to read + write + execute
 
-    long long fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);// create a new file to write the reversed version of the source file
+    long long fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR, 0600);// create a new file to write the reversed version of the source file
     if(fileDescWrite < 0){
         std::cerr << "Error Creating DEstination File : " << strerror(errno) << "\n";
         return;
@@ -244,7 +244,7 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
         return;
     }
 
-    string outputPath = "Assignment1/2_" + string(name);
+    string outputPath = "Assignment1/2_ " + string(name);
     mkdir("Assignment1", 0777); 
     int fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
     if (fileDescWrite < 0) {
