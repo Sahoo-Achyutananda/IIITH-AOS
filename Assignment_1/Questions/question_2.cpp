@@ -13,7 +13,7 @@ void reverseBlock(char * block, unsigned long long blockSize);
 bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long long blockSize);
 bool verifyFlag1(char * modifiedFilePath, char * originalFilePath);
 bool verifyFlag2(char * modifiedFilePath, char * originalFilePath, long long startOffset, long long endOffset);
-bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset, unsigned long long length, bool checkReversed);
+bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset, unsigned long long length, bool checkReversed, unsigned long long fileSize, unsigned long long &bytesProcessed);
 void checkPermissions(char * filePath);
 int main(int argc, char * argv[]){
     // format : ./a.out <newfilepath> <oldfilepath> <directory> <flag> [<blockSize>|<start> <end>]
@@ -35,9 +35,9 @@ int main(int argc, char * argv[]){
     switch(flag){
         case 0:
             if(verifyFlag0(modifiedFilePath, originalFilePath, blockSize)){
-                cout << "Whether file contents are correctly processed : YES" << endl;
+                cout << "\nWhether file contents are correctly processed : YES" << endl;
             }else{
-                cout << "Whether file contents are correctly processed : NO" << endl;
+                cout << "\nWhether file contents are correctly processed : NO" << endl;
             }
 
             break;
@@ -71,24 +71,27 @@ void showProgress(unsigned long long processed, unsigned long long total) {
     //     firstCall = false;
     // }
 
-    const char* done = "█";
-    const char* beingProcessed = ">";
-    const char* notDone = " ";
+        const char* done = "█";
+    const char* beingProcessed = "█";
+    const char* notDone = "░";
 
     float progress = (float)processed / total;
-    progress = std::min(1.0f, progress); // Clamp to 100%
+    progress = min(1.0f, progress);
     int pos = barWidth * progress;
-    std::cout << "\r\033[K";
+    cout << "\r\033[K";
     
-    std::cout << "Processing... [";
+    cout << "\033[32m";
+    cout << "Processing... [";
     for (int i = 0; i < barWidth; ++i) {
-        if (i < pos) std::cout << done;
-        else if (i == pos) std::cout << beingProcessed;
-        else std::cout << notDone;
+        if (i < pos) cout << done;
+        else if (i == pos) cout << beingProcessed;
+        else cout << notDone;
     }
-    std::cout << "] " << int(progress * 100.0) << "% (" 
+    cout << "] " << int(progress * 100.0) << "% (" 
               << processed << "/" << total << ")\r";
-    std::cout.flush();
+    cout.flush();
+    
+    cout << "\033[0m";
     
 
     // if (progress >= 1.0f) {
@@ -133,6 +136,7 @@ bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long
     bool result = true;
     unsigned long long bytesProcessed = 0;
     unsigned long long fileSize = lseek(fileDescOriginalFile, 0, SEEK_END);
+    lseek(fileDescOriginalFile, 0, SEEK_SET);
     while(true){
         unsigned long long bytesModified = read(fileDescModifiedFile, bufferModified, blockSize);
         unsigned long long bytesOriginal = read(fileDescOriginalFile, bufferOriginal, blockSize);
@@ -270,15 +274,15 @@ bool verifyFlag2(char * modifiedFilePath, char * originalFilePath, long long sta
     } else {
         cout << "File Size are same : YES" << endl;
     }
-
-    bool isValid = verifyRegion(fileDescOriginalFile, fileDescModifiedFile,0, startOffset, true);
+    unsigned long long bytesProcessed = 0;
+    bool isValid = verifyRegion(fileDescOriginalFile, fileDescModifiedFile,0, startOffset, true,fileSizeOriginal, bytesProcessed);
 
     if(isValid){
-        isValid = verifyRegion(fileDescOriginalFile, fileDescModifiedFile,startOffset, endOffset - startOffset + 1 , false);
+        isValid = verifyRegion(fileDescOriginalFile, fileDescModifiedFile,startOffset, endOffset - startOffset + 1 , false, fileSizeOriginal, bytesProcessed);
     }
 
     if(isValid){
-        isValid = verifyRegion(fileDescOriginalFile, fileDescModifiedFile,endOffset+1, fileSizeOriginal, fileSizeModified-endOffset-1, true);
+        isValid = verifyRegion(fileDescOriginalFile, fileDescModifiedFile,endOffset+1, fileSizeModified-endOffset-1, true,fileSizeOriginal, bytesProcessed);
     }
 
     close(fileDescModifiedFile);
@@ -288,7 +292,7 @@ bool verifyFlag2(char * modifiedFilePath, char * originalFilePath, long long sta
 }
 
 
-bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset,unsigned long long fileSize, unsigned long long length, bool checkReversed){
+bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset, unsigned long long length, bool checkReversed, unsigned long long fileSize, unsigned long long &bytesProcessed){
     char * bufferOrg = new char[bufferSize];
     char * bufferMod = new char[bufferSize];
 
@@ -314,7 +318,8 @@ bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset,un
 
         orgPos += toRead;
         modPos += toRead;
-        showProgress(orgPos, fileSize);
+        bytesProcessed += toRead;
+        showProgress(bytesProcessed, fileSize);
         remaining-=toRead;
     }
 
