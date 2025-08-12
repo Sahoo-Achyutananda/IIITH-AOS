@@ -7,14 +7,30 @@
 
 using namespace std;
 
+// colors and font styles
+const char* colorRed = "\033[91m"; // bright red
+const char* colorGreen = "\033[92m"; // bright green 
+const char* colorYellow = "\033[93m"; // bringht yellow 
+const char* colorBlue = "\033[94m"; // bright blue 
+const char* reset = "\033[0m";
+const char* fontBold = "\033[1m";
+const char* fontItalic = "\033[3m";
+
 const unsigned long long bufferSize = 4096; 
 bool checkSimilar(char * block1, char* block2, long long blockSize);
 void reverseBlock(char * block, unsigned long long blockSize);
 bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long long blockSize);
 bool verifyFlag1(char * modifiedFilePath, char * originalFilePath);
+// bool verifyFlag2(char* originalPath, char* modifiedPath, 
+                        //  unsigned long long start, unsigned long long end);
 bool verifyFlag2(char * modifiedFilePath, char * originalFilePath, long long startOffset, long long endOffset);
 bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset, unsigned long long length, bool checkReversed, unsigned long long fileSize, unsigned long long &bytesProcessed);
 void checkPermissions(char * filePath);
+void reverseBuffer(char *buffer, unsigned long long size){
+    for(int i = 0; i< size/2; i++){
+        swap(buffer[i], buffer[size - i - 1]);
+    }
+}
 int main(int argc, char * argv[]){
     // format : ./a.out <newfilepath> <oldfilepath> <directory> <flag> [<blockSize>|<start> <end>]
     char *modifiedFilePath = argv[1];
@@ -26,10 +42,10 @@ int main(int argc, char * argv[]){
     long long startOffset = -1;
     long long endOffset = -1;
     if(flag == 0){
-        blockSize = atoi(argv[5]);
-    }else if(flag == 3){
-        startOffset = atoi(argv[5]);
-        endOffset = atoi(argv[6]);
+        blockSize = atoll(argv[5]);
+    }else if(flag == 2){
+        startOffset = atoll(argv[5]);
+        endOffset = atoll(argv[6]);
     }
 
     switch(flag){
@@ -43,35 +59,39 @@ int main(int argc, char * argv[]){
             break;
         case 1:
             if(verifyFlag1(modifiedFilePath, originalFilePath)){
-                cout << "Whether file contents are correctly processed : YES" << endl;
+                cout << "\nWhether file contents are correctly processed : YES" << endl;
             }else{
-                cout << "Whether file contents are correctly processed : NO" << endl;
+                cout << "\nWhether file contents are correctly processed : NO" << endl;
             }
             break;
         case 2:
-            verifyFlag2(modifiedFilePath, originalFilePath, startOffset, endOffset);
+            cout << startOffset << " " << endOffset << endl;
+            if (verifyFlag2(modifiedFilePath, originalFilePath, startOffset, endOffset)){
+                cout << "\nWhether file contents are correctly processed : YES" << endl;
+            }else{
+                cout << "\nWhether file contents are correctly processed : NO" << endl;
+            };
             break;
         default:
-            cout << "Invalid Flag" << endl;
+            cout << "\nInvalid Flag" << endl;
             break;
     }
 
-    checkPermissions(modifiedFilePath);
-    checkPermissions(originalFilePath);
-    checkPermissions(directory);
+    // checkPermissions(modifiedFilePath);
+    // checkPermissions(originalFilePath);
+    // checkPermissions(directory);
 }
 
 void showProgress(unsigned long long processed, unsigned long long total) {
     const int barWidth = 50;
     static bool firstCall = true;
     
+    if (firstCall) {
+         cout << "\033[?25l"; // Hide cursor
+        firstCall = false;
+    }
 
-    // if (firstCall) {
-    //     std::cout << "\033[?25l"; // Hide cursor
-    //     firstCall = false;
-    // }
-
-        const char* done = "█";
+    const char* done = "█";
     const char* beingProcessed = "█";
     const char* notDone = "░";
 
@@ -79,9 +99,11 @@ void showProgress(unsigned long long processed, unsigned long long total) {
     progress = min(1.0f, progress);
     int pos = barWidth * progress;
     cout << "\r\033[K";
+    // cout << "Processing... \r";
+    // cout.flush();
     
-    cout << "\033[32m";
-    cout << "Processing... [";
+    cout << fontBold << colorBlue;
+    cout << "[";
     for (int i = 0; i < barWidth; ++i) {
         if (i < pos) cout << done;
         else if (i == pos) cout << beingProcessed;
@@ -91,19 +113,21 @@ void showProgress(unsigned long long processed, unsigned long long total) {
               << processed << "/" << total << ")\r";
     cout.flush();
     
-    cout << "\033[0m";
-    
+    cout << reset;
 
-    // if (progress >= 1.0f) {
-    //     std::cout << "\033[?25h" << std::endl;
-    // }
+    // Show cursor and newline when complete
+    if (progress >= 1.0f) {
+         cout << "\033[?25h";
+    }
 }
 
 bool checkSimilar(char* block1, char* block2, long long blockSize){
     long long i = 0;
     while(i < blockSize){
-        if(block1[i] != block2[i])
+        if(block1[i] != block2[i]){
+            cout << block1[i] << block2[i] << i << endl;
             return false;
+        }
         i++;
     }
     return true;
@@ -247,84 +271,93 @@ bool verifyFlag1(char * modifiedFilePath, char * originalFilePath) {
     return result;
 }
 
-bool verifyFlag2(char * modifiedFilePath, char * originalFilePath, long long startOffset, long long endOffset){
-    int fileDescModifiedFile = open(modifiedFilePath, O_RDONLY);
-    int fileDescOriginalFile = open(originalFilePath, O_RDONLY);
-    
-    if (fileDescModifiedFile < 0) { 
-        cerr << "Error Reading Modified File: " << strerror(errno) << endl;
-        return false;
-    }
-    if (fileDescOriginalFile < 0) { 
-        cerr << "Error Reading Original File: " << strerror(errno) << endl;
-        return false;
-    }
+bool verifyRegion(long long fdOrg, long long fdMod,
+                  unsigned long long offset, unsigned long long length,
+                  bool checkReversed, unsigned long long fileSize, unsigned long long &bytesProcessed) {
 
-    unsigned long long fileSizeModified = lseek(fileDescModifiedFile, 0, SEEK_END);
-    unsigned long long fileSizeOriginal = lseek(fileDescOriginalFile, 0, SEEK_END);
+    if (length == 0) return true; // nothing to compare
 
-    lseek(fileDescModifiedFile, 0, SEEK_SET);
-    lseek(fileDescOriginalFile, 0, SEEK_SET);
-
-    if (fileSizeModified != fileSizeOriginal) {
-        cout << "File Size are same : NO" << endl;
-        close(fileDescModifiedFile);
-        close(fileDescOriginalFile);
-        return false;
-    } else {
-        cout << "File Size are same : YES" << endl;
-    }
-    unsigned long long bytesProcessed = 0;
-    bool isValid = verifyRegion(fileDescOriginalFile, fileDescModifiedFile,0, startOffset, true,fileSizeOriginal, bytesProcessed);
-
-    if(isValid){
-        isValid = verifyRegion(fileDescOriginalFile, fileDescModifiedFile,startOffset, endOffset - startOffset + 1 , false, fileSizeOriginal, bytesProcessed);
-    }
-
-    if(isValid){
-        isValid = verifyRegion(fileDescOriginalFile, fileDescModifiedFile,endOffset+1, fileSizeModified-endOffset-1, true,fileSizeOriginal, bytesProcessed);
-    }
-
-    close(fileDescModifiedFile);
-    close(fileDescOriginalFile);
-
-    return isValid;
-}
-
-
-bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset, unsigned long long length, bool checkReversed, unsigned long long fileSize, unsigned long long &bytesProcessed){
-    char * bufferOrg = new char[bufferSize];
-    char * bufferMod = new char[bufferSize];
+    char *bufferOrg = new char[bufferSize];
+    char *bufferMod = new char[bufferSize];
 
     unsigned long long remaining = length;
     unsigned long long orgPos = offset;
-    unsigned long long modPos = offset;
 
-    while(remaining > 0){
-        unsigned long long toRead = min(bufferSize, remaining);
-        
-        //read block from the original file
-        lseek(fdOrg, orgPos, SEEK_SET);
-        unsigned long long bytesRead = read(fdOrg, bufferOrg, toRead);
-        if(bytesRead != toRead) return false;
+    // yeh dono are the pointers to keep a track of the indices on the modified<reversed> file 
+    unsigned long long modPosForward = offset;
+    unsigned long long modPosBack = offset + length; // exclusive end
 
-        // read block from the modified file
-        lseek(fdMod, modPos, SEEK_SET);
-        bytesRead = read(fdOrg, bufferOrg, toRead);
-        if(bytesRead != toRead) return false;
+    while (remaining > 0) {
+        unsigned long long toRead = (remaining > bufferSize) ? bufferSize : remaining;
 
-        if(checkReversed) reverseBlock(bufferOrg, toRead);
-        if(checkSimilar(bufferMod, bufferOrg, toRead) != 0)return false;
+        // Read from original forward
+        if (lseek(fdOrg, orgPos, SEEK_SET) < 0) { delete[] bufferOrg; delete[] bufferMod; return false; }
+        long long bytesReadOrg = read(fdOrg, bufferOrg, toRead);
+        if (bytesReadOrg != (long long) toRead) { delete[] bufferOrg; delete[] bufferMod; return false; }
 
-        orgPos += toRead;
-        modPos += toRead;
-        bytesProcessed += toRead;
+        if (!checkReversed) {
+            // Non-reversed region: read from same forward position
+            if (lseek(fdMod, modPosForward, SEEK_SET) < 0) { delete[] bufferOrg; delete[] bufferMod; return false; }
+            long long bytesReadMod = read(fdMod, bufferMod, toRead);
+            if (bytesReadMod != (long long) toRead) { delete[] bufferOrg; delete[] bufferMod; return false; }
+
+            if (!checkSimilar(bufferOrg, bufferMod, toRead)) { delete[] bufferOrg; delete[] bufferMod; return false; }
+
+            orgPos += toRead;
+            modPosForward += toRead;
+        } else {
+            // Reversed region: read chunk from end backwards
+            modPosBack -= toRead; // move pointer back
+            if (lseek(fdMod, modPosBack, SEEK_SET) < 0) { delete[] bufferOrg; delete[] bufferMod; return false; }
+            long long bytesReadMod = read(fdMod, bufferMod, toRead);
+            if (bytesReadMod != (long long) toRead) { delete[] bufferOrg; delete[] bufferMod; return false; }
+
+            reverseBlock(bufferMod, toRead);
+
+            if (!checkSimilar(bufferOrg, bufferMod, toRead)) { delete[] bufferOrg; delete[] bufferMod; return false; }
+
+            orgPos += toRead;
+        }
+
+        remaining -= toRead;
+        bytesProcessed+= toRead;
         showProgress(bytesProcessed, fileSize);
-        remaining-=toRead;
     }
 
+    delete[] bufferOrg;
+    delete[] bufferMod;
     return true;
+}
 
+bool verifyFlag2(char *modifiedFilePath, char *originalFilePath, long long startOffset, long long endOffset) {
+    int fdMod = open(modifiedFilePath, O_RDONLY);
+    int fdOrg = open(originalFilePath, O_RDONLY);
+    if (fdMod < 0 || fdOrg < 0) {
+        cerr << "Error opening files: " << strerror(errno) << endl;
+        if (fdMod >= 0) close(fdMod);
+        if (fdOrg >= 0) close(fdOrg);
+        return false;
+    }
+
+    unsigned long long sizeMod = lseek(fdMod, 0, SEEK_END);
+    unsigned long long sizeOrg = lseek(fdOrg, 0, SEEK_END);
+    unsigned long long bytesProcessed = 0;
+
+    if (sizeMod != sizeOrg) {
+        cout << "File sizes differ" << endl;
+        close(fdMod);
+        close(fdOrg);
+        return false;
+    }
+
+    bool ok = true;
+    if (!verifyRegion(fdOrg, fdMod, 0, startOffset, true, sizeMod, bytesProcessed)) ok = false;
+    if (ok && !verifyRegion(fdOrg, fdMod, startOffset, endOffset - startOffset + 1, false, sizeMod, bytesProcessed)) ok = false;
+    if (ok && !verifyRegion(fdOrg, fdMod, endOffset + 1, sizeOrg - endOffset - 1, true, sizeMod, bytesProcessed)) ok = false;
+
+    close(fdMod);
+    close(fdOrg);
+    return ok;
 }
 
 void checkPermissions(char * filePath){

@@ -2,24 +2,28 @@
 #include<cstring>
 #include<unistd.h>
 #include<fcntl.h>
+#include<chrono> // to track time
 #include<errno.h>
 #include<sys/stat.h>
 
 using namespace std;
+using namespace std::chrono;
 
 // colors and font styles
+const char* colorRed = "\033[91m"; // bright red
 const char* colorGreen = "\033[92m"; // bright green 
 const char* colorYellow = "\033[93m"; // bringht yellow 
 const char* colorBlue = "\033[94m"; // bright blue 
 const char* reset = "\033[0m";
 const char* fontBold = "\033[1m";
-const char* fontItalaic = "\033[2m";
+const char* fontItalic = "\033[3m";
 
 // modules and constants -
 const int bufferSize = 4096;
 void throwError();
 void showProgress(unsigned long long processed, unsigned long long total);
 void showSuccessMessage();
+void showTaskDescription(int type, char* fileName);
 void showDetails(string fileName, string outputPath, unsigned long long fileSize);
 void reverseBuffer(char *buffer, unsigned long long size);
 void reverseBlocks(char* name, unsigned long long blockSize); // flag 0
@@ -28,7 +32,7 @@ void reverseRange(char* name, unsigned long long startIndex, unsigned long long 
 
 int main(int argc, char* argv[]){
     // command format - ./a.out <input file name> <flag> => total count = 3
-
+    auto start = high_resolution_clock::now();
     if(argc < 3){ // MINIMUM 3 arguments are needed !
         throwError();
         return 1;
@@ -39,7 +43,8 @@ int main(int argc, char* argv[]){
 
     // handling flag Out of Bound error -
     if(flag < 0 || flag > 2){
-         cerr << "Invalid Flag" << "\n";
+         cerr << colorRed << fontBold << "Invalid Flag" << "\n" << reset;
+         throwError();
         return 1;
     }
 
@@ -66,6 +71,7 @@ int main(int argc, char* argv[]){
         }
     }
 
+
     switch(flag){
         case 0 :
             reverseBlocks(fileName, blockSize);
@@ -76,11 +82,19 @@ int main(int argc, char* argv[]){
         case 2 :
             reverseRange(fileName, startIndex, endIndex);
             break;
+        default :
+            throwError();
+            break;
     }
+
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+
+    cout << fontBold << colorGreen << fontItalic << "Program Terminated in " << duration.count() << "ms" << reset << "\n";
 }
 
 void throwError(){
-     cerr<<"Command Format : ./a.out <input_file_name> <flag : 0 | 1 | 2 > [offset] | [start_index] [end_index] \n";
+     cerr<< colorRed << fontBold << "Command Format : ./a.out <input_file_name> <flag : 0 | 1 | 2 > [offset] | [start_index] [end_index] \n" << reset;
 }
 
 void showDetails(string fileName, string outputPath, unsigned long long fileSize){
@@ -91,13 +105,12 @@ void showDetails(string fileName, string outputPath, unsigned long long fileSize
 
 void showProgress(unsigned long long processed, unsigned long long total) {
     const int barWidth = 50;
-    // static bool firstCall = true;
+    static bool firstCall = true;
     
-    // // Hide cursor on first call
-    // if (firstCall) {
-    //      cout << "\033[?25l"; // Hide cursor
-    //     firstCall = false;
-    // }
+    if (firstCall) {
+         cout << "\033[?25l"; // Hide cursor
+        firstCall = false;
+    }
 
     const char* done = "█";
     const char* beingProcessed = "█";
@@ -107,9 +120,10 @@ void showProgress(unsigned long long processed, unsigned long long total) {
     progress = min(1.0f, progress);
     int pos = barWidth * progress;
     cout << "\r\033[K";
-    // cout << "Processing... \n";
+    // cout << "Processing... \r";
+    // cout.flush();
     
-    cout << colorGreen;
+    cout << fontBold << colorBlue;
     cout << "[";
     for (int i = 0; i < barWidth; ++i) {
         if (i < pos) cout << done;
@@ -122,15 +136,31 @@ void showProgress(unsigned long long processed, unsigned long long total) {
     
     cout << reset;
 
-    // // Show cursor and newline when complete
-    // if (progress >= 1.0f) {
-    //      cout << "\033[?25h" <<  endl;
-    // }
+    // Show cursor and newline when complete
+    if (progress >= 1.0f) {
+         cout << "\033[?25h";
+    }
 }
 
 void showSuccessMessage(){
-    cout << fontBold << colorYellow << "\nOperation Completed \n" << reset;
+    cout << fontBold << colorBlue << "\nOperation Completed \n\n" << reset;
 }
+
+void showTaskDescription(int type, char* fileName){
+    cout << fontBold << colorGreen << "\nTask : " << reset;
+    switch(type){
+        case 0 :
+            cout << colorBlue << fontBold << "Block Wise Reversal on file - " << fileName << reset << endl;
+            break;
+        case 1 :
+            cout << colorBlue << fontBold << "Full Reversal of file - " << fileName << reset << endl ;
+            break;
+        case 2 :
+            cout << colorBlue << fontBold << "Partial Range Reversal on file - " << fileName << reset << endl;
+            break;
+    }
+}
+
 void reverseBuffer(char *buffer, unsigned long long size){
     for(int i = 0; i< size/2; i++){
         swap(buffer[i], buffer[size - i - 1]);
@@ -165,7 +195,7 @@ void reverseBlocks(char *name, unsigned long long blockSize){
     // char buffer[blockSize]; stack allocation gave an error - segmentation fault
 
     // show general information - 
-
+    showTaskDescription(0,name);
     showDetails(fileName, outputPath, fileSize);
     cout << "Block Size : " << fontBold << colorBlue << blockSize << reset << endl;
 
@@ -217,7 +247,7 @@ void reverseComplete(char * name){
         close(fileDescWrite);
         return;
     }
-
+     showTaskDescription(1,name);
     showDetails(fileName, outputPath, fileSize);
 
     char buffer[bufferSize];
@@ -261,7 +291,7 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
         return;
     }
 
-    string outputPath = "Assignment1/2_ " + string(name);
+    string outputPath = "Assignment1/2_" + string(name);
     mkdir("Assignment1", 0777); 
     int fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
     if (fileDescWrite < 0) {
@@ -280,6 +310,7 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
         close(fileDescWrite);
         return;
     }
+    showTaskDescription(2,name);
     showDetails(fileName, outputPath, fileSize);
     cout << "Start Offset : " << start << endl;
     cout << "End Offset : " << end << endl;
@@ -287,59 +318,108 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
     char* buffer = new char[bufferSize];
     unsigned long long bytesProcessed = 0;
 
-    // Reverse left part
-    unsigned long long leftEnd = start;
-    while (leftEnd > 0) {
-        unsigned long long chunkSize = (leftEnd >= bufferSize) ? bufferSize : leftEnd;
-        /*dry run : 
-        let start = 4 ABCDE : DCBAE
-        4 >= 4096 -> false : therefore chunkSize = 4
-        offset = 4 - 4 = 0
-        */
-
-        unsigned long long offset = leftEnd - chunkSize;
-        lseek(fileDescRead, offset, SEEK_SET);
-        int bytesRead = read(fileDescRead, buffer, chunkSize);
-        reverseBuffer(buffer, bytesRead);
-        write(fileDescWrite, buffer, bytesRead);
-        bytesProcessed+=bytesRead;
+    // ===== REGION 1: Reverse [0 .. start-1] =====
+    unsigned long long region1Len = start;
+    unsigned long long pos = region1Len;
+    while (pos > 0) {
+        unsigned long long toRead = (pos >= bufferSize) ? bufferSize : pos;
+        pos -= toRead;
+        lseek(fileDescRead, pos, SEEK_SET);
+        read(fileDescRead, buffer, toRead);
+        reverseBuffer(buffer, toRead);
+        write(fileDescWrite, buffer, toRead);
+        bytesProcessed += toRead;
         showProgress(bytesProcessed, fileSize);
-        leftEnd = offset;
     }
 
-    // Copy middle part
+    // ===== REGION 2: Copy [start .. endIdx] as-is =====
     lseek(fileDescRead, start, SEEK_SET);
-    unsigned long long copyLen = end - start + 1;
-    while (copyLen > 0) {
-        unsigned long long chunkSize = (copyLen >= bufferSize) ? bufferSize : copyLen;
-        int bytesRead = read(fileDescRead, buffer, chunkSize);
-        write(fileDescWrite, buffer, bytesRead);
-        copyLen -= bytesRead;
-        bytesProcessed+=bytesRead;
+    unsigned long long region2Len = end - start + 1;
+    while (region2Len > 0) {
+        unsigned long long toRead = (region2Len >= bufferSize) ? bufferSize : region2Len;
+        read(fileDescRead, buffer, toRead);
+        write(fileDescWrite, buffer, toRead);
+        region2Len -= toRead;
+        bytesProcessed += toRead;
         showProgress(bytesProcessed, fileSize);
     }
 
-    //Reverse right part
-    unsigned long long rightStart = end + 1;
-    unsigned long long rightEnd = fileSize;
-    
-
-    while (rightEnd > rightStart) {
-        unsigned long long chunkSize = (rightEnd - rightStart >= bufferSize) ? bufferSize : (rightEnd - rightStart);
-        unsigned long long offset = rightEnd - chunkSize;
-        lseek(fileDescRead, offset, SEEK_SET);
-        int bytesRead = read(fileDescRead, buffer, chunkSize);
-        reverseBuffer(buffer, bytesRead);
-        write(fileDescWrite, buffer, bytesRead);
-        bytesProcessed+=bytesRead;
+    // ===== REGION 3: Reverse [endIdx+1 .. EOF] =====
+    unsigned long long region3Start = end + 1;
+    unsigned long long region3Len = fileSize - region3Start;
+    pos = fileSize;
+    while (region3Len > 0) {
+        unsigned long long toRead = (region3Len >= bufferSize) ? bufferSize : region3Len;
+        pos -= toRead;
+        lseek(fileDescRead, pos, SEEK_SET);
+        read(fileDescRead, buffer, toRead);
+        reverseBuffer(buffer, toRead);
+        write(fileDescWrite, buffer, toRead);
+        region3Len -= toRead;
+        bytesProcessed += toRead;
         showProgress(bytesProcessed, fileSize);
-        rightEnd = offset;
     }
 
-    delete[] buffer;
+    // cout << "\nReversal complete.\n";
     showSuccessMessage();
-
+    delete [] buffer;
     close(fileDescRead);
     close(fileDescWrite);
-    return;
+    return ;
+
+    // // Reverse left part
+    // unsigned long long leftEnd = start;
+    // while (leftEnd > 0) {
+    //     unsigned long long chunkSize = (leftEnd >= bufferSize) ? bufferSize : leftEnd;
+    //     /*dry run : 
+    //     let start = 4 ABCDE : DCBAE
+    //     4 >= 4096 -> false : therefore chunkSize = 4
+    //     offset = 4 - 4 = 0
+    //     */
+
+    //     unsigned long long offset = leftEnd - chunkSize;
+    //     lseek(fileDescRead, offset, SEEK_SET);
+    //     int bytesRead = read(fileDescRead, buffer, chunkSize);
+    //     reverseBuffer(buffer, bytesRead);
+    //     write(fileDescWrite, buffer, bytesRead);
+    //     bytesProcessed+=bytesRead;
+    //     showProgress(bytesProcessed, fileSize);
+    //     leftEnd = offset;
+    // }
+
+    // // Copy middle part
+    // lseek(fileDescRead, start, SEEK_SET);
+    // unsigned long long copyLen = end - start + 1;
+    // while (copyLen > 0) {
+    //     unsigned long long chunkSize = (copyLen >= bufferSize) ? bufferSize : copyLen;
+    //     int bytesRead = read(fileDescRead, buffer, chunkSize);
+    //     write(fileDescWrite, buffer, bytesRead);
+    //     copyLen -= bytesRead;
+    //     bytesProcessed+=bytesRead;
+    //     showProgress(bytesProcessed, fileSize);
+    // }
+
+    // //Reverse right part
+    // unsigned long long rightStart = end + 1;
+    // unsigned long long rightEnd = fileSize;
+    
+
+    // while (rightEnd > rightStart) {
+    //     unsigned long long chunkSize = (rightEnd - rightStart >= bufferSize) ? bufferSize : (rightEnd - rightStart);
+    //     unsigned long long offset = rightEnd - chunkSize;
+    //     lseek(fileDescRead, offset, SEEK_SET);
+    //     int bytesRead = read(fileDescRead, buffer, chunkSize);
+    //     reverseBuffer(buffer, bytesRead);
+    //     write(fileDescWrite, buffer, bytesRead);
+    //     bytesProcessed+=bytesRead;
+    //     showProgress(bytesProcessed, fileSize);
+    //     rightEnd = offset;
+    // }
+
+    // delete[] buffer;
+    // showSuccessMessage();
+
+    // close(fileDescRead);
+    // close(fileDescWrite);
+    // return;
 }
