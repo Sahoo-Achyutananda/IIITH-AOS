@@ -88,9 +88,9 @@ int main(int argc, char* argv[]){
     }
 
     auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(stop - start);
+    auto duration = duration_cast<seconds>(stop - start);
 
-    cout << fontBold << colorGreen << fontItalic << "Program Terminated in " << duration.count() << "ms" << reset << "\n";
+    cout << fontBold << colorGreen << fontItalic << "Program Terminated in " << duration.count() << "sec" << reset << "\n";
 }
 
 void throwError(){
@@ -247,7 +247,7 @@ void reverseComplete(char * name){
         close(fileDescWrite);
         return;
     }
-     showTaskDescription(1,name);
+    showTaskDescription(1,name);
     showDetails(fileName, outputPath, fileSize);
 
     char buffer[bufferSize];
@@ -312,13 +312,13 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
     }
     showTaskDescription(2,name);
     showDetails(fileName, outputPath, fileSize);
-    cout << "Start Offset : " << start << endl;
-    cout << "End Offset : " << end << endl;
+    cout << "Start Offset : " << colorBlue << fontBold << start << reset << endl;
+    cout << "End Offset : " << colorBlue << fontBold <<  end  << reset << endl;
 
     char* buffer = new char[bufferSize];
     unsigned long long bytesProcessed = 0;
 
-    // ===== REGION 1: Reverse [0 .. start-1] =====
+    // handle 0 to start-1
     unsigned long long region1Len = start;
     unsigned long long pos = region1Len;
     while (pos > 0) {
@@ -332,7 +332,7 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
         showProgress(bytesProcessed, fileSize);
     }
 
-    // ===== REGION 2: Copy [start .. endIdx] as-is =====
+    // handle start to end
     lseek(fileDescRead, start, SEEK_SET);
     unsigned long long region2Len = end - start + 1;
     while (region2Len > 0) {
@@ -344,7 +344,7 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
         showProgress(bytesProcessed, fileSize);
     }
 
-    // ===== REGION 3: Reverse [endIdx+1 .. EOF] =====
+    // handle end + 1 to EOF
     unsigned long long region3Start = end + 1;
     unsigned long long region3Len = fileSize - region3Start;
     pos = fileSize;
@@ -360,7 +360,6 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
         showProgress(bytesProcessed, fileSize);
     }
 
-    // cout << "\nReversal complete.\n";
     showSuccessMessage();
     delete [] buffer;
     close(fileDescRead);
