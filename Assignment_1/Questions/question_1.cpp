@@ -7,13 +7,15 @@
 
 using namespace std;
 
-// colors 
-const char* colorGreen = "\033[32m"; 
-const char* colorYellow = "\033[33m"; 
-const char* colorBlue = "\033[34m"; 
-const char* colorReset = "\033[0m";
+// colors and font styles
+const char* colorGreen = "\033[92m"; // bright green 
+const char* colorYellow = "\033[93m"; // bringht yellow 
+const char* colorBlue = "\033[94m"; // bright blue 
+const char* reset = "\033[0m";
+const char* fontBold = "\033[1m";
+const char* fontItalaic = "\033[2m";
 
-
+// modules and constants -
 const int bufferSize = 4096;
 void throwError();
 void showProgress(unsigned long long processed, unsigned long long total);
@@ -82,9 +84,9 @@ void throwError(){
 }
 
 void showDetails(string fileName, string outputPath, unsigned long long fileSize){
-    cout << "Source File Name : " << colorBlue << fileName << colorReset << endl;
-    cout << "Destination File Path : "<< colorBlue << outputPath << colorReset <<  endl;
-    cout << "File Size : " << colorBlue << fileSize << colorReset << endl;
+    cout << "Source File Name : " << fontBold << colorBlue << fileName << reset << endl;
+    cout << "Destination File Path : " << fontBold << colorBlue << outputPath << reset <<  endl;
+    cout << "File Size : " << fontBold << colorBlue << fileSize << reset << endl;
 }
 
 void showProgress(unsigned long long processed, unsigned long long total) {
@@ -105,9 +107,10 @@ void showProgress(unsigned long long processed, unsigned long long total) {
     progress = min(1.0f, progress);
     int pos = barWidth * progress;
     cout << "\r\033[K";
+    // cout << "Processing... \n";
     
-    cout << "\033[32m";
-    cout << "Processing... [";
+    cout << colorGreen;
+    cout << "[";
     for (int i = 0; i < barWidth; ++i) {
         if (i < pos) cout << done;
         else if (i == pos) cout << beingProcessed;
@@ -117,7 +120,7 @@ void showProgress(unsigned long long processed, unsigned long long total) {
               << processed << "/" << total << ")\r";
     cout.flush();
     
-    cout << "\033[0m";
+    cout << reset;
 
     // // Show cursor and newline when complete
     // if (progress >= 1.0f) {
@@ -126,7 +129,7 @@ void showProgress(unsigned long long processed, unsigned long long total) {
 }
 
 void showSuccessMessage(){
-    cout << "\nOperation Completed \n";
+    cout << fontBold << colorYellow << "\nOperation Completed \n" << reset;
 }
 void reverseBuffer(char *buffer, unsigned long long size){
     for(int i = 0; i< size/2; i++){
@@ -164,7 +167,7 @@ void reverseBlocks(char *name, unsigned long long blockSize){
     // show general information - 
 
     showDetails(fileName, outputPath, fileSize);
-    cout << "Block Size : " << blockSize << endl;
+    cout << "Block Size : " << fontBold << colorBlue << blockSize << reset << endl;
 
     char * buffer = new char[blockSize];
     unsigned long long bytesRead = 9999; // set to a large value initially - to enter the while loop | do while loop gave some bugs
@@ -182,7 +185,7 @@ void reverseBlocks(char *name, unsigned long long blockSize){
         cerr<< "Error reading Source File : " << strerror(errno) << "\n";
     }
 
-    cout << "\nFile writing completed !" << "\n";
+    showSuccessMessage();
     delete [] buffer;
     close(fileDescRead);
     close(fileDescWrite);
@@ -244,7 +247,6 @@ void reverseComplete(char * name){
     }
     
     showSuccessMessage();
-    cout << "\nOperation Completed \n";
 
     close(fileDescRead);
     close(fileDescWrite);
@@ -335,7 +337,7 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
     }
 
     delete[] buffer;
-     cout << "\nOperation Completed \n";
+    showSuccessMessage();
 
     close(fileDescRead);
     close(fileDescWrite);
