@@ -36,7 +36,7 @@ void reverseRange(char* name, unsigned long long startIndex, unsigned long long 
 int main(int argc, char* argv[]){
     // command format - ./a.out <input file name> <flag> => total count = 3
     auto start = high_resolution_clock::now();
-    if(argc < 3){ // MINIMUM 3 arguments are needed !
+    if(argc < 3){ // mini. 3 arguments are needed !
         throwError();
         return 1;
     }
@@ -149,6 +149,12 @@ void showSuccessMessage(){
     cout << fontBold << colorBlue << "\nOperation Completed \n" << reset;
 }
 
+void showErrorMessage(const char * message){
+    cerr << fontBold << fontItalic << colorRed
+         << "Error: " << message << " (" << strerror(errno) << ")"
+         << reset << endl;
+}
+
 void showTaskDescription(int type, char* fileName){
     cout << fontBold << string(foregroundGreen) << "\n Task " << reset;
     switch(type){
@@ -164,6 +170,47 @@ void showTaskDescription(int type, char* fileName){
     }
 }
 
+// this function was used to handle a block size of 1 -
+void copyFile(const char* source, const char* destination){
+    long long sourcefd = open(source, O_RDONLY);
+    if(sourcefd < 0){
+        showErrorMessage("Error Opening Source file ! ");
+        return;
+    }
+    unsigned long long fileSize = lseek(sourcefd, 0, SEEK_END);
+    lseek(sourcefd, 0 ,SEEK_SET);
+
+    long long destfd = open(destination, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+    if(destfd < 0){
+        showErrorMessage("Error Opening Source file ! ");
+        return;
+    }
+
+    char* buffer = new char[bufferSize];
+    unsigned long long bytesRead;
+    unsigned long long bytesProcessed = 0;
+
+    while ((bytesRead = read(sourcefd, buffer, bufferSize)) > 0) {
+        unsigned long long bytesWritten = write(destfd, buffer, bytesRead);
+        if (bytesWritten < 0) {
+            cerr << "Error writing to output file: " << strerror(errno) << endl;
+            close(sourcefd);
+            close(destfd);
+            return;
+        }
+        bytesProcessed+=bytesWritten;
+        showProgress(bytesProcessed, fileSize);
+    }
+
+    if (bytesRead < 0) {
+        cerr << "Error reading input file: " << strerror(errno) << endl;
+    }
+    showSuccessMessage();
+    delete [] buffer;
+    close(sourcefd);
+    close(destfd);
+
+}
 void reverseBuffer(char *buffer, unsigned long long size){
     for(int i = 0; i< size/2; i++){
         swap(buffer[i], buffer[size - i - 1]);
@@ -171,23 +218,29 @@ void reverseBuffer(char *buffer, unsigned long long size){
 }
 
 void reverseBlocks(char *name, unsigned long long blockSize){
+    // edge case : invalid block size
     if(blockSize <= 0){
         cerr << colorRed << fontBold << "Block Size must be greater than 0" << reset << endl;
         return;
     }
+    
+
     string fileName = name;
     unsigned long long fileDescRead = open(fileName.c_str(), O_RDONLY); 
+    // edge case : invalid file name/ file doesnt exist
     if(fileDescRead < 0){
         cerr << "Error Opening Source File : " << strerror(errno) << "\n";
         return;
     }
     unsigned long long fileSize = lseek(fileDescRead, 0 ,SEEK_END);
-    if(blockSize > fileSize){
-        cerr << colorRed << fontBold << "Block Size exceeds File Size" << reset << endl;
+    // edge case : block size larger than the file size
+    if(blockSize >= fileSize){
+        reverseComplete(name);
         return;
     }
 
-    string outputPath = "Assignment1/0_" + fileName;
+    string outputPath = "Assignment1/0_" + fileName;  
+
     mkdir("Assignment1", 0777); // 0777 - grants full permission - (read, write, and execute)
     unsigned long long fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);// create a new file to write the reversed version of the source file
     if(fileDescWrite < 0){
@@ -209,7 +262,11 @@ void reverseBlocks(char *name, unsigned long long blockSize){
     showTaskDescription(0,name);
     showDetails(fileName, outputPath, fileSize);
     cout << "Block Size : " << fontBold << colorBlue << blockSize << reset << endl;
-
+    
+    if(blockSize == 1){
+        copyFile(fileName.c_str(), outputPath.c_str());
+        return;
+    }
     char * buffer = new char[blockSize];
     unsigned long long bytesRead = 9999; // set to a large value initially - to enter the while loop | do while loop gave some bugs
     unsigned long long bytesProcessed = 0;
@@ -247,7 +304,7 @@ void reverseComplete(char * name){
 
     long long fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR, 0600);// create a new file to write the reversed version of the source file
     if(fileDescWrite < 0){
-         cerr << "Error Creating DEstination File : " << strerror(errno) << "\n";
+         cerr << "Error Creating Destination File : " << strerror(errno) << "\n";
         return;
     }
 
@@ -376,60 +433,4 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
     close(fileDescRead);
     close(fileDescWrite);
     return ;
-
-    // // Reverse left part
-    // unsigned long long leftEnd = start;
-    // while (leftEnd > 0) {
-    //     unsigned long long chunkSize = (leftEnd >= bufferSize) ? bufferSize : leftEnd;
-    //     /*dry run : 
-    //     let start = 4 ABCDE : DCBAE
-    //     4 >= 4096 -> false : therefore chunkSize = 4
-    //     offset = 4 - 4 = 0
-    //     */
-
-    //     unsigned long long offset = leftEnd - chunkSize;
-    //     lseek(fileDescRead, offset, SEEK_SET);
-    //     int bytesRead = read(fileDescRead, buffer, chunkSize);
-    //     reverseBuffer(buffer, bytesRead);
-    //     write(fileDescWrite, buffer, bytesRead);
-    //     bytesProcessed+=bytesRead;
-    //     showProgress(bytesProcessed, fileSize);
-    //     leftEnd = offset;
-    // }
-
-    // // Copy middle part
-    // lseek(fileDescRead, start, SEEK_SET);
-    // unsigned long long copyLen = end - start + 1;
-    // while (copyLen > 0) {
-    //     unsigned long long chunkSize = (copyLen >= bufferSize) ? bufferSize : copyLen;
-    //     int bytesRead = read(fileDescRead, buffer, chunkSize);
-    //     write(fileDescWrite, buffer, bytesRead);
-    //     copyLen -= bytesRead;
-    //     bytesProcessed+=bytesRead;
-    //     showProgress(bytesProcessed, fileSize);
-    // }
-
-    // //Reverse right part
-    // unsigned long long rightStart = end + 1;
-    // unsigned long long rightEnd = fileSize;
-    
-
-    // while (rightEnd > rightStart) {
-    //     unsigned long long chunkSize = (rightEnd - rightStart >= bufferSize) ? bufferSize : (rightEnd - rightStart);
-    //     unsigned long long offset = rightEnd - chunkSize;
-    //     lseek(fileDescRead, offset, SEEK_SET);
-    //     int bytesRead = read(fileDescRead, buffer, chunkSize);
-    //     reverseBuffer(buffer, bytesRead);
-    //     write(fileDescWrite, buffer, bytesRead);
-    //     bytesProcessed+=bytesRead;
-    //     showProgress(bytesProcessed, fileSize);
-    //     rightEnd = offset;
-    // }
-
-    // delete[] buffer;
-    // showSuccessMessage();
-
-    // close(fileDescRead);
-    // close(fileDescWrite);
-    // return;
 }

@@ -55,7 +55,6 @@ int main(int argc, char * argv[]){
 
     switch(flag){
         case 0:
-
             if(verifyFlag0(modifiedFilePath, originalFilePath, blockSize)){
                 cout << fontBold << colorBlue << "\nWhether file contents are correctly processed : " << colorGreen << "YES" << reset << endl;
             }else{
