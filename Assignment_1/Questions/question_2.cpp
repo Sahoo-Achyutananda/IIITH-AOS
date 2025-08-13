@@ -16,8 +16,8 @@ const char* colorGreen = "\033[92m"; // bright green
 const char* colorYellow = "\033[93m"; // bringht yellow 
 const char* colorBlue = "\033[94m"; // bright blue 
 const char* foregroundBlue = "\033[104m"; 
-const string foregroundGreen = "\033[102m";
-const string foregroundRed = "\033[101m";
+const char* foregroundGreen = "\033[102m";
+const char* foregroundRed = "\033[101m";
 const char* reset = "\033[0m";
 const char* fontBold = "\033[1m";
 const char* fontItalic = "\033[3m";
@@ -102,7 +102,9 @@ void showDetails(string fileName, string outputPath, unsigned long long fileSize
 }
 
 void showTaskDescription(int type, char* fileName){
-    cout << fontBold << foregroundGreen << "\n Task " << reset;
+    // cout << fontBold << foregroundGreen << "\n Task " << reset;
+    cout << "\n" << fontBold << foregroundGreen << " Task " << reset;
+
     switch(type){
         case 0 :
             cout << foregroundBlue << fontBold << " Verify Block Wise Reversal on file - " << fileName << " "  << reset << endl;
@@ -159,7 +161,7 @@ bool checkSimilar(char* block1, char* block2, long long blockSize){
     long long i = 0;
     while(i < blockSize){
         if(block1[i] != block2[i]){
-            cout << block1[i] << block2[i] << i << endl;
+            // cout << block1[i] << block2[i] << i << endl;
             return false;
         }
         i++;
@@ -178,7 +180,7 @@ bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long
     // 2. open them using open() sys call
     if(blockSize <= 0){
         cerr << colorRed << fontBold << "Block Size must be greater than 0" << reset << endl;
-        return;
+        return false;
     }
 
     long long fileDescModifiedFile = open(modifiedFilePath, O_RDONLY);
@@ -193,9 +195,9 @@ bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long
         return false;
     }
     unsigned long long fileSize = lseek(fileDescOriginalFile, 0, SEEK_END);
-    if(blockSize > fileSize){
-        cerr << colorRed << fontBold << "Block Size exceeds File Size" << reset << endl;
-        return;
+    if(blockSize >= fileSize){
+        // cerr << colorRed << fontBold << "Block Size exceeds File Size" << reset << endl;
+        return verifyFlag1(modifiedFilePath, originalFilePath);
     }
     // 3. create buffers to store the data to be read
     char * bufferModified = new char[blockSize];
@@ -208,7 +210,7 @@ bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long
     showTaskDescription(0,originalFilePath);
     showDetails(originalFilePath, modifiedFilePath, fileSize);
     cout << "Block Size : " << fontBold << colorBlue << blockSize << reset << endl;
-    cout << fontBold << colorBlue <<  "Processing ... " << endl;
+    cout << fontBold << colorBlue <<  "\nProcessing ... " << endl;
 
     while(true){
         unsigned long long bytesModified = read(fileDescModifiedFile, bufferModified, blockSize);
@@ -284,7 +286,7 @@ bool verifyFlag1(char * modifiedFilePath, char * originalFilePath) {
     bool result = true;
     showTaskDescription(1,originalFilePath);
     showDetails(originalFilePath, modifiedFilePath, fileSizeOriginal);
-    cout << fontBold << colorBlue <<  "Processing ... " << endl;
+    cout << fontBold << colorBlue <<  "\nProcessing ... " << endl;
 
     while (orgPos < fileSizeOriginal) {
         unsigned long long toRead = (fileSizeOriginal - orgPos < bufferSize) 
@@ -428,7 +430,7 @@ bool verifyFlag2(char *modifiedFilePath, char *originalFilePath, long long start
     showDetails(originalFilePath, modifiedFilePath, sizeOrg);
     cout << "Start Offset : " << colorBlue << fontBold << startOffset << reset << endl;
     cout << "End Offset : " << colorBlue << fontBold <<  endOffset  << reset << endl;
-    cout << fontBold << colorBlue <<  "Processing ... " << endl;
+    cout << fontBold << colorBlue <<  "\nProcessing ... " << endl;
 
     bool ok = true;
     if (!verifyRegion(fdOrg, fdMod, 0, startOffset, true, sizeMod, bytesProcessed)) ok = false;

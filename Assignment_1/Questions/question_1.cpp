@@ -26,6 +26,7 @@ const int bufferSize = 4096;
 void throwError();
 void showProgress(unsigned long long processed, unsigned long long total);
 void showSuccessMessage();
+void showErrorMessage(const char * message, bool showErno);
 void showTaskDescription(int type, char* fileName);
 void showDetails(string fileName, string outputPath, unsigned long long fileSize);
 void reverseBuffer(char *buffer, unsigned long long size);
@@ -46,8 +47,9 @@ int main(int argc, char* argv[]){
 
     // handling flag Out of Bound error -
     if(flag < 0 || flag > 2){
-         cerr << colorRed << fontBold << "Invalid Flag" << "\n" << reset;
-         throwError();
+        showErrorMessage("INvalid Flag", false);
+        //  cerr << colorRed << fontBold << "Invalid Flag" << "\n" << reset;
+        throwError();
         return 1;
     }
 
@@ -86,6 +88,7 @@ int main(int argc, char* argv[]){
             reverseRange(fileName, startIndex, endIndex);
             break;
         default :
+            showErrorMessage("Incorrect Flag", false);
             throwError();
             break;
     }
@@ -93,7 +96,7 @@ int main(int argc, char* argv[]){
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<seconds>(stop - start);
 
-    cout << fontBold << colorGreen << fontItalic << "File written in " << duration.count() << "sec" << reset << "\n\n";
+    cout << fontBold << colorGreen << fontItalic << "\nProgram Executed in " << duration.count() << "sec" << reset << "\n\n";
 }
 
 void throwError(){
@@ -149,23 +152,27 @@ void showSuccessMessage(){
     cout << fontBold << colorBlue << "\nOperation Completed \n" << reset;
 }
 
-void showErrorMessage(const char * message){
-    cerr << fontBold << fontItalic << colorRed
-         << "Error: " << message << " (" << strerror(errno) << ")"
-         << reset << endl;
+void showErrorMessage(const char * message, bool showErno){
+    if(showErno){
+        cerr << fontBold << fontItalic << colorRed << "Error: " << message << " (" << strerror(errno) << ")" << reset << endl;
+    }else{
+        cerr << fontBold << fontItalic << colorRed << "Error: " << message << reset << endl;
+    }
+    
 }
 
 void showTaskDescription(int type, char* fileName){
-    cout << fontBold << string(foregroundGreen) << "\n Task " << reset;
+    cout << "\n" << fontBold << foregroundGreen << " Task " << reset;
+    // cout << fontBold << string(foregroundGreen) << "\n Task " << reset;
     switch(type){
         case 0 :
-            cout << string(foregroundBlue) << fontBold << " Block Wise Reversal on file - " << fileName << " " << reset << endl;
+            cout << string(foregroundBlue) << fontBold << " Block Wise Reversal on file - " << fileName << " " << reset << reset << "\n";
             break;
         case 1 :
-            cout << string(foregroundBlue) << fontBold << " Full Reversal of file - " << fileName << reset  << " " << endl ;
+            cout << string(foregroundBlue) << fontBold << " Full Reversal of file - " << fileName << " "  << reset << reset << "\n" ;
             break;
         case 2 :
-            cout << string(foregroundBlue) << fontBold << " Partial Range Reversal on file - " << fileName << " "  << reset << endl;
+            cout << string(foregroundBlue) << fontBold << " Partial Range Reversal on file - " << fileName << " "  << reset << reset << "\n";
             break;
     }
 }
@@ -174,7 +181,7 @@ void showTaskDescription(int type, char* fileName){
 void copyFile(const char* source, const char* destination){
     long long sourcefd = open(source, O_RDONLY);
     if(sourcefd < 0){
-        showErrorMessage("Error Opening Source file ! ");
+        showErrorMessage("Error Opening Source file ! ", true);
         return;
     }
     unsigned long long fileSize = lseek(sourcefd, 0, SEEK_END);
@@ -182,7 +189,7 @@ void copyFile(const char* source, const char* destination){
 
     long long destfd = open(destination, O_WRONLY | O_CREAT | O_TRUNC, 0600);
     if(destfd < 0){
-        showErrorMessage("Error Opening Source file ! ");
+        showErrorMessage("Error Opening Source file ! ", true);
         return;
     }
 
@@ -193,7 +200,7 @@ void copyFile(const char* source, const char* destination){
     while ((bytesRead = read(sourcefd, buffer, bufferSize)) > 0) {
         unsigned long long bytesWritten = write(destfd, buffer, bytesRead);
         if (bytesWritten < 0) {
-            cerr << "Error writing to output file: " << strerror(errno) << endl;
+            showErrorMessage("Error writing to output file", true);
             close(sourcefd);
             close(destfd);
             return;
@@ -203,7 +210,7 @@ void copyFile(const char* source, const char* destination){
     }
 
     if (bytesRead < 0) {
-        cerr << "Error reading input file: " << strerror(errno) << endl;
+        showErrorMessage("Error reading input file", true);
     }
     showSuccessMessage();
     delete [] buffer;
@@ -220,19 +227,20 @@ void reverseBuffer(char *buffer, unsigned long long size){
 void reverseBlocks(char *name, unsigned long long blockSize){
     // edge case : invalid block size
     if(blockSize <= 0){
-        cerr << colorRed << fontBold << "Block Size must be greater than 0" << reset << endl;
+        showErrorMessage("Block Size must be greater than 0", false);
+        // cerr << colorRed << fontBold << "Block Size must be greater than 0" << reset << endl;
         return;
     }
     
-
     string fileName = name;
-    unsigned long long fileDescRead = open(fileName.c_str(), O_RDONLY); 
+    long long fileDescRead = open(fileName.c_str(), O_RDONLY); 
     // edge case : invalid file name/ file doesnt exist
     if(fileDescRead < 0){
-        cerr << "Error Opening Source File : " << strerror(errno) << "\n";
+        showErrorMessage("Error Opening Source File . ", true); 
+        // cerr << "Error Opening Source File : " << strerror(errno) << "\n";
         return;
     }
-    unsigned long long fileSize = lseek(fileDescRead, 0 ,SEEK_END);
+    long long fileSize = lseek(fileDescRead, 0 ,SEEK_END);
     // edge case : block size larger than the file size
     if(blockSize >= fileSize){
         reverseComplete(name);
@@ -244,13 +252,15 @@ void reverseBlocks(char *name, unsigned long long blockSize){
     mkdir("Assignment1", 0777); // 0777 - grants full permission - (read, write, and execute)
     unsigned long long fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);// create a new file to write the reversed version of the source file
     if(fileDescWrite < 0){
-        cerr << "Error Creating Destination File : " << strerror(errno) << "\n";
+        showErrorMessage("Error Creating Destination File", true);
+        // cerr << "Error Creating Destination File : " << strerror(errno) << "\n";
         close(fileDescRead);
         return;
     }
 
     if(fileSize < 0){
-        cerr << "Error retrieving File Size : " << strerror(errno) << "\n";
+        showErrorMessage("Error retrieving File Size", true);
+        // cerr << "Error retrieving File Size : " << strerror(errno) << "\n";
         close(fileDescRead);
         close(fileDescWrite);
         return;
@@ -262,6 +272,7 @@ void reverseBlocks(char *name, unsigned long long blockSize){
     showTaskDescription(0,name);
     showDetails(fileName, outputPath, fileSize);
     cout << "Block Size : " << fontBold << colorBlue << blockSize << reset << endl;
+    cout << fontBold << colorBlue <<  "\nProcessing ... " << endl;
     
     if(blockSize == 1){
         copyFile(fileName.c_str(), outputPath.c_str());
@@ -280,23 +291,23 @@ void reverseBlocks(char *name, unsigned long long blockSize){
     }
 
     if(bytesRead < 0){
-        cerr<< "Error reading Source File : " << strerror(errno) << "\n";
+        showErrorMessage("Error reading Source File", true);
+        // cerr<< "Error reading Source File : " << strerror(errno) << "\n";
     }
 
     showSuccessMessage();
     delete [] buffer;
     close(fileDescRead);
     close(fileDescWrite);
-
-    
 }
 
 void reverseComplete(char * name){
     string fileName = name;
     long long fileDescRead = open(name, O_RDONLY); 
     if (fileDescRead < 0) {
-        cout << "File Name : " << fileName << endl;
-         cerr << "Error Opening Source File : " << strerror(errno) << "\n";
+        // cout << "File Name : " << fileName << endl;
+        showErrorMessage("Error Opening Source File", true);
+        // cerr << "Error Opening Source File : " << strerror(errno) << "\n";
         return;
     }
     string outputPath = "Assignment1/1_" + string(name);
@@ -304,19 +315,22 @@ void reverseComplete(char * name){
 
     long long fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR, 0600);// create a new file to write the reversed version of the source file
     if(fileDescWrite < 0){
-         cerr << "Error Creating Destination File : " << strerror(errno) << "\n";
+        showErrorMessage("Error Creating Destination File", true);
+        // cerr << "Error Creating Destination File : " << strerror(errno) << "\n";
         return;
     }
 
     unsigned long long fileSize = lseek(fileDescRead, 0 ,SEEK_END);
     if(fileSize < 0){
-         cerr << "Error retrieving File Size : " << strerror(errno) << "\n";
+        showErrorMessage("Error retrieving File Size", true);
+        // cerr << "Error retrieving File Size : " << strerror(errno) << "\n";
         close(fileDescRead);
         close(fileDescWrite);
         return;
     }
     showTaskDescription(1,name);
     showDetails(fileName, outputPath, fileSize);
+    cout << fontBold << colorBlue <<  "\nProcessing ... " << endl;
 
     char buffer[bufferSize];
     unsigned long long remaining = fileSize;
@@ -330,13 +344,15 @@ void reverseComplete(char * name){
 
         long long bytesRead = read(fileDescRead, buffer, toRead);
         if (bytesRead < 0) {
-             cerr << "Error reading input: " << strerror(errno) << "\n";
+            showErrorMessage("Error Reading Input", true);
+            //  cerr << "Error reading input: " << strerror(errno) << "\n";
             break;
         }
         reverseBuffer(buffer, bytesRead);
         long long bytesWritten = write(fileDescWrite, buffer, bytesRead);
         if (bytesWritten < 0) {
-             cerr << "Error writing to output: " << strerror(errno) << "\n";
+            showErrorMessage("Error Writing to Output", true);
+            //  cerr << "Error writing to output: " << strerror(errno) << "\n";
             break;
         }
         bytesProcessed+=bytesRead;
@@ -355,7 +371,8 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
     string fileName = name;
     int fileDescRead = open(name, O_RDONLY); 
     if (fileDescRead < 0) {
-         cerr << "Error Opening Source File : " << strerror(errno) << "\n";
+        showErrorMessage("Error Opening Source File", true);
+        //  cerr << "Error Opening Source File : " << strerror(errno) << "\n";
         return;
     }
 
@@ -363,7 +380,8 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
     mkdir("Assignment1", 0777); 
     int fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
     if (fileDescWrite < 0) {
-         cerr << "Error Creating Destination File : " << strerror(errno) << "\n";
+        showErrorMessage("Error Creating Destination File", true);
+        //  cerr << "Error Creating Destination File : " << strerror(errno) << "\n";
         close(fileDescRead);
         return;
     }
@@ -373,7 +391,8 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
 
     // Validate indices
     if (start >= fileSize || end >= fileSize || start > end || start < 0 || end < 0) {
-         cerr << "Invalid start/end indices.\n";
+        showErrorMessage("Invalid start/end indices", false);
+        //  cerr << "Invalid start/end indices.\n";
         close(fileDescRead); 
         close(fileDescWrite);
         return;
@@ -382,6 +401,7 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
     showDetails(fileName, outputPath, fileSize);
     cout << "Start Offset : " << colorBlue << fontBold << start << reset << endl;
     cout << "End Offset : " << colorBlue << fontBold <<  end  << reset << endl;
+    cout << fontBold << colorBlue <<  "\nProcessing ... " << endl;
 
     char* buffer = new char[bufferSize];
     unsigned long long bytesProcessed = 0;
