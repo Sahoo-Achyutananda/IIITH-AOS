@@ -14,6 +14,9 @@ const char* colorRed = "\033[91m"; // bright red
 const char* colorGreen = "\033[92m"; // bright green 
 const char* colorYellow = "\033[93m"; // bringht yellow 
 const char* colorBlue = "\033[94m"; // bright blue 
+const char* foregroundGreen = "\033[102m";
+const char* foregroundBlue = "\033[104m"; 
+const char* foregroundRed = "\033[101m";
 const char* reset = "\033[0m";
 const char* fontBold = "\033[1m";
 const char* fontItalic = "\033[3m";
@@ -90,7 +93,7 @@ int main(int argc, char* argv[]){
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<seconds>(stop - start);
 
-    cout << fontBold << colorGreen << fontItalic << "Program Terminated in " << duration.count() << "sec" << reset << "\n";
+    cout << fontBold << colorGreen << fontItalic << "File written in " << duration.count() << "sec" << reset << "\n\n";
 }
 
 void throwError(){
@@ -143,20 +146,20 @@ void showProgress(unsigned long long processed, unsigned long long total) {
 }
 
 void showSuccessMessage(){
-    cout << fontBold << colorBlue << "\nOperation Completed \n\n" << reset;
+    cout << fontBold << colorBlue << "\nOperation Completed \n" << reset;
 }
 
 void showTaskDescription(int type, char* fileName){
-    cout << fontBold << colorGreen << "\nTask : " << reset;
+    cout << fontBold << string(foregroundGreen) << "\n Task " << reset;
     switch(type){
         case 0 :
-            cout << colorBlue << fontBold << "Block Wise Reversal on file - " << fileName << reset << endl;
+            cout << string(foregroundBlue) << fontBold << " Block Wise Reversal on file - " << fileName << " " << reset << endl;
             break;
         case 1 :
-            cout << colorBlue << fontBold << "Full Reversal of file - " << fileName << reset << endl ;
+            cout << string(foregroundBlue) << fontBold << " Full Reversal of file - " << fileName << reset  << " " << endl ;
             break;
         case 2 :
-            cout << colorBlue << fontBold << "Partial Range Reversal on file - " << fileName << reset << endl;
+            cout << string(foregroundBlue) << fontBold << " Partial Range Reversal on file - " << fileName << " "  << reset << endl;
             break;
     }
 }
@@ -168,10 +171,19 @@ void reverseBuffer(char *buffer, unsigned long long size){
 }
 
 void reverseBlocks(char *name, unsigned long long blockSize){
+    if(blockSize <= 0){
+        cerr << colorRed << fontBold << "Block Size must be greater than 0" << reset << endl;
+        return;
+    }
     string fileName = name;
     unsigned long long fileDescRead = open(fileName.c_str(), O_RDONLY); 
     if(fileDescRead < 0){
         cerr << "Error Opening Source File : " << strerror(errno) << "\n";
+        return;
+    }
+    unsigned long long fileSize = lseek(fileDescRead, 0 ,SEEK_END);
+    if(blockSize > fileSize){
+        cerr << colorRed << fontBold << "Block Size exceeds File Size" << reset << endl;
         return;
     }
 
@@ -184,7 +196,6 @@ void reverseBlocks(char *name, unsigned long long blockSize){
         return;
     }
 
-    unsigned long long fileSize = lseek(fileDescRead, 0 ,SEEK_END);
     if(fileSize < 0){
         cerr << "Error retrieving File Size : " << strerror(errno) << "\n";
         close(fileDescRead);

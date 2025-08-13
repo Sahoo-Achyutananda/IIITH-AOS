@@ -83,17 +83,17 @@ int main(int argc, char * argv[]){
     }
 
     cout << endl;
-    cout << fontBold << foregroundGreen << "Permissions on Reversed File : " << modifiedFilePath << reset << endl;
+    cout << fontBold << foregroundBlue << "Permissions on Reversed File : " << modifiedFilePath << reset << endl;
     checkPermissions(modifiedFilePath);
-    cout << fontBold << foregroundGreen << "Permissions on Original File : " << originalFilePath << reset << endl;
+    cout << fontBold << foregroundBlue << "Permissions on Original File : " << originalFilePath << reset << endl;
     checkPermissions(originalFilePath);
-    cout << fontBold << foregroundGreen << "Permissions on Directory : " << directory << reset << endl;
+    cout << fontBold << foregroundBlue << "Permissions on Directory : " << directory << reset << endl;
     checkPermissions(directory);
 
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<seconds>(stop - start);
 
-    cout << fontBold << colorGreen << fontItalic << "Program Terminated in " << duration.count() << "sec" << reset << "\n";
+    cout << fontBold << colorGreen << fontItalic << "Files Analyzed in " << duration.count() << "sec" << reset << "\n\n";
 }
 
 void showDetails(string fileName, string outputPath, unsigned long long fileSize){
@@ -106,13 +106,13 @@ void showTaskDescription(int type, char* fileName){
     cout << fontBold << foregroundGreen << "\n Task " << reset;
     switch(type){
         case 0 :
-            cout << foregroundBlue << fontBold << " Verify Block Wise Reversal on file - " << fileName << reset << endl;
+            cout << foregroundBlue << fontBold << " Verify Block Wise Reversal on file - " << fileName << " "  << reset << endl;
             break;
         case 1 :
-            cout << foregroundBlue << fontBold << " Verify Full Reversal of file - " << fileName << reset << endl ;
+            cout << foregroundBlue << fontBold << " Verify Full Reversal of file - " << fileName << " "  << reset << endl ;
             break;
         case 2 :
-            cout << foregroundBlue << fontBold << " Verify Partial Range Reversal on file - " << fileName << reset << endl;
+            cout << foregroundBlue << fontBold << " Verify Partial Range Reversal on file - " << fileName << " "  << reset << endl;
             break;
     }
 }
@@ -177,6 +177,11 @@ void reverseBlock(char * block, unsigned long long blockSize){
 bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long long blockSize){
     // 1. get files paths
     // 2. open them using open() sys call
+    if(blockSize <= 0){
+        cerr << colorRed << fontBold << "Block Size must be greater than 0" << reset << endl;
+        return;
+    }
+
     long long fileDescModifiedFile = open(modifiedFilePath, O_RDONLY);
     long long fileDescOriginalFile = open(originalFilePath, O_RDONLY);
     
@@ -188,13 +193,17 @@ bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long
         cerr << "Error Reading Original File " << strerror(errno) << endl;
         return false;
     }
+    unsigned long long fileSize = lseek(fileDescOriginalFile, 0, SEEK_END);
+    if(blockSize > fileSize){
+        cerr << colorRed << fontBold << "Block Size exceeds File Size" << reset << endl;
+        return;
+    }
     // 3. create buffers to store the data to be read
     char * bufferModified = new char[blockSize];
     char * bufferOriginal = new char[blockSize];
     // 4. compare the buffers
     bool result = true;
     unsigned long long bytesProcessed = 0;
-    unsigned long long fileSize = lseek(fileDescOriginalFile, 0, SEEK_END);
     lseek(fileDescOriginalFile, 0, SEEK_SET);
 
     showTaskDescription(0,originalFilePath);
@@ -238,6 +247,8 @@ bool verifyFlag1(char * modifiedFilePath, char * originalFilePath) {
     // reverse one of them
     // compare
     // repeat the process by moving the offsets carefully
+
+    
     
     int fileDescModifiedFile = open(modifiedFilePath, O_RDONLY);
     int fileDescOriginalFile = open(originalFilePath, O_RDONLY);
@@ -442,28 +453,28 @@ void checkPermissions(char * filePath){
     // User Permission Check
     cout << fontBold << fontItalic << colorBlue << "User Permissions" << reset << endl;
     cout << setw(40) << "User has read permissions on " << filePath << ": "
-              << fontBold << ((fileStat.st_mode & S_IRUSR) ? (foregroundGreen  + "Yes"): (foregroundRed +  "No "))<< reset << "\n";
+              << fontBold << ((fileStat.st_mode & S_IRUSR) ? (string(colorGreen)  + "Yes"): (string(colorRed) +  "No "))<< reset << "\n";
     cout << setw(40) << "User has write permission on " << filePath << ": "
-              << fontBold << ((fileStat.st_mode & S_IWUSR) ? (foregroundGreen  + "Yes"): (foregroundRed +  "No "))<< reset << "\n";
+              << fontBold << ((fileStat.st_mode & S_IWUSR) ? (string(colorGreen)  + "Yes"): (string(colorRed) +  "No "))<< reset << "\n";
     cout << setw(40) << "User has execute permission on " << filePath << ": "
-              << fontBold << ((fileStat.st_mode & S_IXUSR) ? (foregroundGreen  + "Yes"): (foregroundRed +  "No "))<< reset << "\n";
+              << fontBold << ((fileStat.st_mode & S_IXUSR) ? (string(colorGreen)  + "Yes"): (string(colorRed) +  "No "))<< reset << "\n";
 
     // Group Permission Check
     cout << fontBold << fontItalic << colorBlue << "Group Permissions" << reset << endl;
     cout << setw(40) << "Group has read permissions on " << filePath << ": "
-              << fontBold << ((fileStat.st_mode & S_IRGRP) ? (foregroundGreen  + "Yes"): (foregroundRed +  "No "))<< reset << "\n";
+              << fontBold << ((fileStat.st_mode & S_IRGRP) ? (string(colorGreen)  + "Yes"): (string(colorRed) +  "No "))<< reset << "\n";
     cout << setw(40) << "Group has write permission on " << filePath << ": "
-              << fontBold << ((fileStat.st_mode & S_IWGRP) ? (foregroundGreen  + "Yes"): (foregroundRed +  "No "))<< reset << "\n";
+              << fontBold << ((fileStat.st_mode & S_IWGRP) ? (string(colorGreen)  + "Yes"): (string(colorRed) +  "No "))<< reset << "\n";
     cout << setw(40) << "Group has execute permission on " << filePath << ": "
-              << fontBold << ((fileStat.st_mode & S_IXGRP) ? (foregroundGreen  + "Yes"): (foregroundRed +  "No "))<< reset << "\n";
+              << fontBold << ((fileStat.st_mode & S_IXGRP) ? (string(colorGreen)  + "Yes"): (string(colorRed) +  "No "))<< reset << "\n";
 
     // Permission Check on Others
     cout << fontBold << fontItalic << colorBlue << "Others Permissions" << reset << endl;
     cout << setw(40) << "Others have read permissions on " << filePath << ": "
-              << fontBold << ((fileStat.st_mode & S_IROTH) ? (foregroundGreen  + "Yes"): (foregroundRed +  "No "))<< reset << "\n";
+              << fontBold << ((fileStat.st_mode & S_IROTH) ? (string(colorGreen)  + "Yes"): (string(colorRed) +  "No "))<< reset << "\n";
     cout << setw(40) << "Others have write permission on " << filePath << ": "
-              << fontBold << ((fileStat.st_mode & S_IWOTH) ? (foregroundGreen  + "Yes"): (foregroundRed +  "No "))<< reset << "\n";
+              << fontBold << ((fileStat.st_mode & S_IWOTH) ? (string(colorGreen)  + "Yes"): (string(colorRed) +  "No "))<< reset << "\n";
     cout << setw(40) << "Others have execute permission on " << filePath << ": "
-              << fontBold << ((fileStat.st_mode & S_IXOTH) ? (foregroundGreen  + "Yes"): (foregroundRed +  "No "))<< reset << "\n";
+              << fontBold << ((fileStat.st_mode & S_IXOTH) ? (string(colorGreen)  + "Yes"): (string(colorRed) +  "No "))<< reset << "\n";
 
 }
