@@ -25,14 +25,18 @@ const char* fontItalic = "\033[3m";
 const unsigned long long bufferSize = 4096; 
 void showTaskDescription(int type, char* fileName);
 void showDetails(string fileName, string outputPath, unsigned long long fileSize);
-
+bool checkDirectoryExists(const char * directoryName);
 bool checkSimilar(char * block1, char* block2, long long blockSize);
 void reverseBlock(char * block, unsigned long long blockSize);
+bool checkFileSize(char * modifiedFilePath, char * originalFilePath);
 bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long long blockSize);
 bool verifyFlag1(char * modifiedFilePath, char * originalFilePath);
 bool verifyFlag2(char * modifiedFilePath, char * originalFilePath, long long startOffset, long long endOffset);
 bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset, unsigned long long length, bool checkReversed, unsigned long long fileSize, unsigned long long &bytesProcessed);
 void checkPermissions(char * filePath);
+void showErrorMessage(const char * message, bool showErno);
+void throwError();
+
 
 int main(int argc, char * argv[]){
     // format : ./a.out <newfilepath> <oldfilepath> <directory> <flag> [<blockSize>|<start> <end>]
@@ -43,15 +47,40 @@ int main(int argc, char * argv[]){
     char *directory = argv[3];
     int flag = atoi(argv[4]);
 
+    if(flag < 0 || flag > 2){
+        showErrorMessage("Invalid Flag", false);
+        throwError();
+        return 1;
+    }
+
     long long blockSize = -1;
     long long startOffset = -1;
     long long endOffset = -1;
-    if(flag == 0){
-        blockSize = atoll(argv[5]);
-    }else if(flag == 2){
-        startOffset = atoll(argv[5]);
-        endOffset = atoll(argv[6]);
+
+    if(flag == 0){  
+        if(argc == 6){
+            blockSize =  atoi(argv[5]); // assigning block
+        }else{
+            throwError();
+            return 1;
+        }
     }
+
+    if(flag == 2){
+        if(argc == 7){
+            startOffset =  atoi(argv[5]);
+            endOffset =  atoi(argv[6]);
+        }else{
+            throwError();
+            return 1;
+        }
+    }
+
+    // preliminary file size check - 
+    // if (!checkFileSize(modifiedFilePath, originalFilePath)){
+    //     showErrorMessage("Further Processing is terminated due to indifferent file sizes", false);
+    //     return 0;
+    // };
 
     switch(flag){
         case 0:
@@ -81,6 +110,8 @@ int main(int argc, char * argv[]){
             break;
     }
 
+    bool t = checkFileSize(modifiedFilePath, originalFilePath);
+    bool p = checkDirectoryExists("Assignment1");
     cout << endl;
     cout << fontBold << foregroundBlue << "Permissions on Reversed File : " << modifiedFilePath << reset << endl;
     checkPermissions(modifiedFilePath);
@@ -101,6 +132,18 @@ void showDetails(string fileName, string outputPath, unsigned long long fileSize
     cout << "File Size : " << fontBold << colorBlue << fileSize << reset << endl;
 }
 
+// prompt the correct command format - 
+void throwError(){
+     cerr<< colorRed << fontBold << "Command Format : ./a.out <newfilepath> <oldfilepath> <directory> <flag> [<blockSize>|<start> <end>] \n" << reset;
+}
+void showErrorMessage(const char * message, bool showErno){
+    if(showErno){
+        cerr << fontBold << fontItalic << colorRed << "Error: " << message << " (" << strerror(errno) << ")" << reset << endl;
+    }else{
+        cerr << fontBold << fontItalic << colorRed << "Error: " << message << reset << endl;
+    }
+    
+}
 void showTaskDescription(int type, char* fileName){
     // cout << fontBold << foregroundGreen << "\n Task " << reset;
     cout << "\n" << fontBold << foregroundGreen << " Task " << reset;
@@ -117,7 +160,34 @@ void showTaskDescription(int type, char* fileName){
             break;
     }
 }
+bool checkDirectoryExists(const char * directoryName){
+    const char* dir = directoryName;
+    struct stat sb;
+    if (stat(dir, &sb) == 0){
+        cout << fontBold << colorBlue << "\nWhether Directory Exists " << "(" << directoryName << ") : " << colorGreen << "YES" << reset << endl;
+        return true;
+    }
+    else{
+        cout << fontBold << colorBlue << "\nWhether Directory Exists " << "(" << directoryName << ") : " << colorRed << "NO" << reset << endl;
+        return false;
+    }
+}
 
+bool checkFileSize(char * modifiedFilePath, char * originalFilePath){
+    long long modfd = open(modifiedFilePath, O_RDONLY);
+    long long orgfd = open(originalFilePath, O_RDONLY);
+
+    unsigned long long modSize = lseek(modfd, 0, SEEK_END); 
+    unsigned long long orgSize = lseek(orgfd, 0, SEEK_END);
+
+    if(modSize == orgSize){
+        cout << fontBold << colorBlue << "\nWhether file sizes are same : " << colorGreen << "YES" << reset << endl;
+        return true;
+    }else{
+        cout << fontBold << colorBlue << "\nWhether file sizes are same : " << colorRed << "NO" << reset << endl;
+        return false;
+    }
+}
 void showProgress(unsigned long long processed, unsigned long long total) {
     const int barWidth = 50;
     static bool firstCall = true;
@@ -161,7 +231,6 @@ bool checkSimilar(char* block1, char* block2, long long blockSize){
     long long i = 0;
     while(i < blockSize){
         if(block1[i] != block2[i]){
-            // cout << block1[i] << block2[i] << i << endl;
             return false;
         }
         i++;
@@ -249,8 +318,6 @@ bool verifyFlag1(char * modifiedFilePath, char * originalFilePath) {
     // compare
     // repeat the process by moving the offsets carefully
 
-    
-    
     int fileDescModifiedFile = open(modifiedFilePath, O_RDONLY);
     int fileDescOriginalFile = open(originalFilePath, O_RDONLY);
     
@@ -327,6 +394,7 @@ bool verifyFlag1(char * modifiedFilePath, char * originalFilePath) {
     return result;
 }
 
+// used as a helper function for flag 2 verification - 
 bool verifyRegion(long long fdOrg, long long fdMod,
                   unsigned long long offset, unsigned long long length,
                   bool checkReversed, unsigned long long fileSize, unsigned long long &bytesProcessed) {
@@ -347,9 +415,17 @@ bool verifyRegion(long long fdOrg, long long fdMod,
         unsigned long long toRead = (remaining > bufferSize) ? bufferSize : remaining;
 
         // Read from original forward
-        if (lseek(fdOrg, orgPos, SEEK_SET) < 0) { delete[] bufferOrg; delete[] bufferMod; return false; }
+        if (lseek(fdOrg, orgPos, SEEK_SET) < 0) { 
+            delete[] bufferOrg; 
+            delete[] bufferMod; 
+            return false; 
+        }
         long long bytesReadOrg = read(fdOrg, bufferOrg, toRead);
-        if (bytesReadOrg != (long long) toRead) { delete[] bufferOrg; delete[] bufferMod; return false; }
+        if (bytesReadOrg != (long long) toRead) { 
+            delete[] bufferOrg; 
+            delete[] bufferMod; 
+            return false; 
+        }
 
         if (!checkReversed) {
             // Non-reversed region: read from same forward position
@@ -390,7 +466,11 @@ bool verifyRegion(long long fdOrg, long long fdMod,
 
             reverseBlock(bufferMod, toRead);
 
-            if (!checkSimilar(bufferOrg, bufferMod, toRead)) { delete[] bufferOrg; delete[] bufferMod; return false; }
+            if (!checkSimilar(bufferOrg, bufferMod, toRead)) { 
+                delete[] bufferOrg; 
+                delete[] bufferMod; 
+                return false; 
+            }
 
             orgPos += toRead;
         }

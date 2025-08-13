@@ -47,7 +47,7 @@ int main(int argc, char* argv[]){
 
     // handling flag Out of Bound error -
     if(flag < 0 || flag > 2){
-        showErrorMessage("INvalid Flag", false);
+        showErrorMessage("Invalid Flag", false);
         //  cerr << colorRed << fontBold << "Invalid Flag" << "\n" << reset;
         throwError();
         return 1;
@@ -95,6 +95,8 @@ int main(int argc, char* argv[]){
 
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<seconds>(stop - start);
+
+    chmod("Assignment1", 0700);
 
     cout << fontBold << colorGreen << fontItalic << "\nProgram Executed in " << duration.count() << "sec" << reset << "\n\n";
 }
@@ -249,7 +251,10 @@ void reverseBlocks(char *name, unsigned long long blockSize){
 
     string outputPath = "Assignment1/0_" + fileName;  
 
-    mkdir("Assignment1", 0777); // 0777 - grants full permission - (read, write, and execute)
+    // mode_t old_mask = umask(0);  // Disable umask
+    mkdir("Assignment1", 0700);  // Force 700 permissions
+    // umask(old_mask);            // Restore original umask
+
     unsigned long long fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);// create a new file to write the reversed version of the source file
     if(fileDescWrite < 0){
         showErrorMessage("Error Creating Destination File", true);
@@ -296,6 +301,7 @@ void reverseBlocks(char *name, unsigned long long blockSize){
     }
 
     showSuccessMessage();
+    chmod("Assignment1", 0700);
     delete [] buffer;
     close(fileDescRead);
     close(fileDescWrite);
@@ -311,7 +317,11 @@ void reverseComplete(char * name){
         return;
     }
     string outputPath = "Assignment1/1_" + string(name);
-    mkdir("Assignment1", 0700); // directory : only user has permission to read + write + execute
+
+    // mode_t old_mask = umask(0);  // Disable umask - CREATING ISSUES MAYBE
+    mkdir("Assignment1", 0700);  // Force 700 permissions
+    // umask(old_mask);            // Restore original umask
+    
 
     long long fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR, 0600);// create a new file to write the reversed version of the source file
     if(fileDescWrite < 0){
@@ -361,7 +371,7 @@ void reverseComplete(char * name){
     }
     
     showSuccessMessage();
-
+    chmod("Assignment1", 0700);
     close(fileDescRead);
     close(fileDescWrite);
     return;
@@ -377,7 +387,11 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
     }
 
     string outputPath = "Assignment1/2_" + string(name);
-    mkdir("Assignment1", 0777); 
+ 
+    // mode_t old_mask = umask(0);  // Disable umask
+    mkdir("Assignment1", 0700);  // Force 700 permissions
+    // umask(old_mask);            // Restore original umask
+
     int fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
     if (fileDescWrite < 0) {
         showErrorMessage("Error Creating Destination File", true);
@@ -449,6 +463,7 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
     }
 
     showSuccessMessage();
+    chmod("Assignment1", 0700);
     delete [] buffer;
     close(fileDescRead);
     close(fileDescWrite);
