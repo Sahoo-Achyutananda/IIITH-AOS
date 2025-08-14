@@ -51,6 +51,22 @@ int main(int argc, char * argv[]){
     char *directory = argv[3];
     int flag = atoi(argv[4]);
 
+    // preliminary checks - 
+    long long modfd = open(modifiedFilePath, O_RDONLY);
+    long long orgfd = open(originalFilePath, O_RDONLY);
+    if(modfd < 0){
+        showErrorMessage("Error reading Modified File Path", true);
+        close(modfd);
+        close(orgfd);
+        return 1;
+    }
+    if(orgfd < 0){
+        showErrorMessage("Error reading Original File Path", true);
+        close(modfd);
+        close(orgfd);
+        return 1;
+    }
+
     if(flag < 0 || flag > 2){
         showErrorMessage("Invalid Flag", false);
         throwError();
@@ -268,7 +284,14 @@ bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long
         return false;
     }
     unsigned long long fileSize = lseek(fileDescOriginalFile, 0, SEEK_END);
+    if(fileSize == 0){
+        showErrorMessage("The File is Empty", false);
+        close(fileDescOriginalFile);
+        close(fileDescModifiedFile);
+        return false;
+    }
     if(blockSize >= fileSize){
+        cout << fontBold << colorBlue << "Performing Full file reversal - (Block Size is greater than File size)" << reset << endl;
         return verifyFlag1(modifiedFilePath, originalFilePath);
     }
     // 3. create buffers to store the data to be read
@@ -335,17 +358,20 @@ bool verifyFlag1(char * modifiedFilePath, char * originalFilePath) {
 
     unsigned long long fileSizeModified = lseek(fileDescModifiedFile, 0, SEEK_END);
     unsigned long long fileSizeOriginal = lseek(fileDescOriginalFile, 0, SEEK_END);
-
+    if(fileSizeModified == 0 || fileSizeOriginal == 0){
+        showErrorMessage("The File is Empty", false);
+        close(fileDescOriginalFile);
+        close(fileDescModifiedFile);
+        return false;
+    }
     lseek(fileDescModifiedFile, 0, SEEK_SET);
     lseek(fileDescOriginalFile, 0, SEEK_SET);
 
     if (fileSizeModified != fileSizeOriginal) {
-        cout << "File Size are same : NO" << endl;
+        // cout << "File Size are same : NO" << endl;
         close(fileDescModifiedFile);
         close(fileDescOriginalFile);
         return false;
-    } else {
-        cout << "File Size are same : YES" << endl;
     }
 
     char * bufferModified = new char[bufferSize];
@@ -501,9 +527,14 @@ bool verifyFlag2(char *modifiedFilePath, char *originalFilePath, long long start
     unsigned long long sizeMod = lseek(fdMod, 0, SEEK_END);
     unsigned long long sizeOrg = lseek(fdOrg, 0, SEEK_END);
     unsigned long long bytesProcessed = 0;
-
+    if(sizeMod == 0 || sizeOrg == 0){
+        showErrorMessage("The File is Empty", false);
+        close(fdMod);
+        close(fdOrg);
+        return false;
+    }
     if (sizeMod != sizeOrg) {
-        cout << "File sizes differ" << endl;
+        // cout << "File sizes differ" << endl;
         close(fdMod);
         close(fdOrg);
         return false;

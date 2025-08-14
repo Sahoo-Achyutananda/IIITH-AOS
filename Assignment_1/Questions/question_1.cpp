@@ -29,7 +29,7 @@ void showSuccessMessage();
 void showErrorMessage(const char * message, bool showErno);
 void showTaskDescription(int type, char* fileName);
 void showDetails(string fileName, string outputPath, unsigned long long fileSize);
-void reverseBuffer(char *buffer, unsigned long long size);
+void reverseBuffer(char *buffer, unsigned long long size); //helper
 void reverseBlocks(char* name, unsigned long long blockSize); // flag 0
 void reverseComplete(char* fileName); // flag 1
 void reverseRange(char* name, unsigned long long startIndex, unsigned long long endIndex); // flag 2
@@ -44,6 +44,21 @@ int main(int argc, char* argv[]){
 
     char * fileName = argv[1];
     int flag =  atoi(argv[2]);
+
+    // prelimenary checks 
+    long long fd = open(fileName, O_RDONLY);
+    if(fd < 0){
+        showErrorMessage("Error reading File Path", true);
+        close(fd);
+        return 1;
+    }
+
+    unsigned long long fileSize = lseek(fd,0,SEEK_END);
+    if(fileSize == 0){
+        showErrorMessage("File is Empty", false);
+        close(fd);
+        return 1;
+    }
 
     // handling flag Out of Bound error -
     if(flag < 0 || flag > 2){
@@ -157,8 +172,7 @@ void showErrorMessage(const char * message, bool showErno){
         cerr << fontBold << fontItalic << colorRed << "Error: " << message << " (" << strerror(errno) << ")" << reset << endl;
     }else{
         cerr << fontBold << fontItalic << colorRed << "Error: " << message << reset << endl;
-    }
-    
+    } 
 }
 
 void showTaskDescription(int type, char* fileName){
@@ -179,10 +193,10 @@ void showTaskDescription(int type, char* fileName){
 // this function was used to handle a block size of 1 -
 void copyFile(const char* source, const char* destination){
     long long sourcefd = open(source, O_RDONLY);
-    if(sourcefd < 0){
-        showErrorMessage("Error Opening Source file ! ", true);
-        return;
-    }
+    // if(sourcefd < 0){
+    //     showErrorMessage("Error Opening Source file ! ", true);
+    //     return;
+    // }
     unsigned long long fileSize = lseek(sourcefd, 0, SEEK_END);
     lseek(sourcefd, 0 ,SEEK_SET);
 
@@ -236,17 +250,25 @@ void reverseBlocks(char *name, unsigned long long blockSize){
     
     string fileName = name;
     long long fileDescRead = open(fileName.c_str(), O_RDONLY); 
-    // edge case : invalid file name/ file doesnt exist
-    if(fileDescRead < 0){
-        showErrorMessage("Error Opening Source File . ", true); 
-        return;
-    }
-    long long fileSize = lseek(fileDescRead, 0 ,SEEK_END);
+    // // edge case : invalid file name/ file doesnt exist
+    // if(fileDescRead < 0){
+    //     showErrorMessage("Error Opening Source File . ", true); 
+    //     close(fileDescRead);
+    //     return;
+    // }
+    unsigned long long fileSize = lseek(fileDescRead, 0 ,SEEK_END);
     // edge case : block size larger than the file size
     if(blockSize >= fileSize){
+        cout << fontBold << colorBlue << "Performing Full file reversal - (Block Size is greater than File size)" << reset << endl;
         reverseComplete(name);
         return;
     }
+
+    // if(fileSize == 0){
+    //     showErrorMessage("The File is Empty", false);
+    //     close(fileDescRead);
+    //     return;
+    // }
 
     string outputPath = "Assignment1/0_" + fileName;  
 
@@ -305,10 +327,17 @@ void reverseBlocks(char *name, unsigned long long blockSize){
 void reverseComplete(char * name){
     string fileName = name;
     long long fileDescRead = open(name, O_RDONLY); 
-    if (fileDescRead < 0) {
-        showErrorMessage("Error Opening Source File", true);
-        return;
-    }
+    // if (fileDescRead < 0) {
+    //     showErrorMessage("Error Opening Source File", true);
+    //     close(fileDescRead);
+    //     return;
+    // }
+    unsigned long long fileSize = lseek(fileDescRead, 0 ,SEEK_END);
+    // if(fileSize == 0){
+    //     showErrorMessage("The File is Empty", false);
+    //     close(fileDescRead);
+    //     return;
+    // }
     string outputPath = "Assignment1/1_" + string(name);
 
     mkdir("Assignment1", 0700);  // Force 700 permissions
@@ -320,7 +349,6 @@ void reverseComplete(char * name){
         return;
     }
 
-    unsigned long long fileSize = lseek(fileDescRead, 0 ,SEEK_END);
     if(fileSize < 0){
         showErrorMessage("Error retrieving File Size", true);
         close(fileDescRead);
@@ -368,10 +396,16 @@ void reverseComplete(char * name){
 void reverseRange(char* name, unsigned long long start, unsigned long long end) {
     string fileName = name;
     int fileDescRead = open(name, O_RDONLY); 
-    if (fileDescRead < 0) {
-        showErrorMessage("Error Opening Source File", true);
-        return;
-    }
+    // if (fileDescRead < 0) {
+    //     showErrorMessage("Error Opening Source File", true);
+    //     return;
+    // }
+    unsigned long long fileSize = lseek(fileDescRead, 0, SEEK_END);
+    // if(fileSize == 0){
+    //     showErrorMessage("The File is Empty", false);
+    //     close(fileDescRead);
+    //     return;
+    // }
 
     string outputPath = "Assignment1/2_" + string(name);
  
@@ -384,7 +418,6 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
         return;
     }
 
-    unsigned long long fileSize = lseek(fileDescRead, 0, SEEK_END);
     lseek(fileDescRead, 0, SEEK_SET);
 
     // Validate indices
