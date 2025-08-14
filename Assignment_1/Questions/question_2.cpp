@@ -54,19 +54,22 @@ int main(int argc, char * argv[]){
     // preliminary checks - 
     long long modfd = open(modifiedFilePath, O_RDONLY);
     long long orgfd = open(originalFilePath, O_RDONLY);
+    long long dirfd = open(directory, O_RDONLY);
+    if(dirfd < 0){
+        showErrorMessage("Error accessing Directory", true);
+        return 1;
+    }
     if(modfd < 0){
         showErrorMessage("Error reading Modified File Path", true);
-        close(modfd);
-        close(orgfd);
+        close(dirfd);
         return 1;
     }
     if(orgfd < 0){
         showErrorMessage("Error reading Original File Path", true);
         close(modfd);
-        close(orgfd);
+        close(dirfd);
         return 1;
     }
-
     if(flag < 0 || flag > 2){
         showErrorMessage("Invalid Flag", false);
         throwError();
@@ -226,14 +229,19 @@ void showProgress(unsigned long long processed, unsigned long long total) {
     float progress = (float)processed / total;
     progress = min(1.0f, progress);
     int pos = barWidth * progress;
+    const char * color;
     cout << "\r\033[K";
     
     cout << fontBold << colorBlue;
     cout << "[";
     for (int i = 0; i < barWidth; ++i) {
-        if (i < pos) cout << done;
-        else if (i == pos) cout << beingProcessed;
-        else cout << notDone;
+        if(i < barWidth*0.2f) color = colorRed;
+        else if(i < barWidth*0.5f) color =colorYellow;
+        else color = colorGreen;
+        
+        if (i < pos) cout << color << done << reset;
+        else if (i == pos) cout << color << beingProcessed << reset;
+        else cout << color << notDone << reset;
     }
     cout << "] " << int(progress * 100.0) << "% (" 
               << processed << "/" << total << ")\r";
@@ -274,15 +282,7 @@ bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long
 
     long long fileDescModifiedFile = open(modifiedFilePath, O_RDONLY);
     long long fileDescOriginalFile = open(originalFilePath, O_RDONLY);
-    
-    if(fileDescModifiedFile < 0){ 
-        cerr << "Error Reading Modofied File " << strerror(errno) << endl;
-        return false;
-    }
-    if(fileDescOriginalFile < 0){ 
-        cerr << "Error Reading Original File " << strerror(errno) << endl;
-        return false;
-    }
+
     unsigned long long fileSize = lseek(fileDescOriginalFile, 0, SEEK_END);
     if(fileSize == 0){
         showErrorMessage("The File is Empty", false);
@@ -347,14 +347,6 @@ bool verifyFlag1(char * modifiedFilePath, char * originalFilePath) {
     int fileDescModifiedFile = open(modifiedFilePath, O_RDONLY);
     int fileDescOriginalFile = open(originalFilePath, O_RDONLY);
     
-    if (fileDescModifiedFile < 0) { 
-        cerr << "Error Reading Modified File: " << strerror(errno) << endl;
-        return false;
-    }
-    if (fileDescOriginalFile < 0) { 
-        cerr << "Error Reading Original File: " << strerror(errno) << endl;
-        return false;
-    }
 
     unsigned long long fileSizeModified = lseek(fileDescModifiedFile, 0, SEEK_END);
     unsigned long long fileSizeOriginal = lseek(fileDescOriginalFile, 0, SEEK_END);
@@ -517,12 +509,6 @@ bool verifyRegion(long long fdOrg, long long fdMod,
 bool verifyFlag2(char *modifiedFilePath, char *originalFilePath, long long startOffset, long long endOffset) {
     int fdMod = open(modifiedFilePath, O_RDONLY);
     int fdOrg = open(originalFilePath, O_RDONLY);
-    if (fdMod < 0 || fdOrg < 0) {
-        cerr << "Error opening files: " << strerror(errno) << endl;
-        if (fdMod >= 0) close(fdMod);
-        if (fdOrg >= 0) close(fdOrg);
-        return false;
-    }
 
     unsigned long long sizeMod = lseek(fdMod, 0, SEEK_END);
     unsigned long long sizeOrg = lseek(fdOrg, 0, SEEK_END);

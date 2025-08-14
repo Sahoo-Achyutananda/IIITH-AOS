@@ -1,3 +1,43 @@
+# Code Structure
+
+## 2025202028_A1_Q1.cpp <Question 1>
+
+The following funnctions were declared and defined. Apart from these, constants for buffer size, colors and font styles were declared.
+```bash
+void throwError(); # shows the actual command format when  wrong arguments are passed
+void showProgress(unsigned long long processed, unsigned long long total); # for showing progress bar
+void showSuccessMessage(); # To show a simple message after completing file reversals
+void showErrorMessage(const char * message, bool showErno); # To show specific error messages, the second argument is used when errno is supposed to be displayed
+void showTaskDescription(int type, char* fileName); # Shows the task desription based on the command passed
+void showDetails(string fileName, string outputPath, unsigned long long fileSize); # shows necessary details about the task being performed
+void reverseBuffer(char *buffer, unsigned long long size); # helper function 
+void reverseBlocks(char* name, unsigned long long blockSize); # implementation of Flag 0
+void reverseComplete(char* fileName); # implementation of Flag 1
+void reverseRange(char* name, unsigned long long startIndex, unsigned long long endIndex); # implementation of Flag 2
+```
+
+## 2025202028_A1_Q2.cpp <Question 2>
+
+The following funnctions were declared and defined. Apart from these, constants for buffer size, colors and font styles were declared.
+```bash
+void showTaskDescription(int type, char* fileName); # same as question 1
+void showDetails(string fileName, string outputPath, unsigned long long fileSize); # same as question 1
+bool checkDirectoryExists(const char * directoryName); # checks if a directory exists
+bool checkSimilar(char * block1, char* block2, long long blockSize); # checks if two buffers are similar or not
+void reverseBlock(char * block, unsigned long long blockSize); # reverses a given block
+bool checkFileSize(char * modifiedFilePath, char * originalFilePath); # checks whether two files are of same size
+bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long long blockSize); # implementation of flag 0 verifier 
+bool verifyFlag1(char * modifiedFilePath, char * originalFilePath); # implementation of flag 1 verifier
+bool verifyFlag2(char * modifiedFilePath, char * originalFilePath, long long startOffset, long long endOffset); # implementation of flag 2 verifier
+bool verifyRegion(long long fdOrg, long long fdMod, unsigned long long offset, unsigned long long length, bool checkReversed, unsigned long long fileSize, unsigned long long &bytesProcessed); # a helper function for verifyFlag2()
+void checkPermissions(char * filePath); # checks and prints permission
+void showErrorMessage(const char * message, bool showErno); # same as question 1
+void throwError(); # same as question 1
+```
+
+
+**NOTE : A Buffer Size of 4096 (4KB) is being used by default to handle large files. Detailed working of each program along with examples are given below**
+
 # Question 1 :  File Reversal Utility
 
 ## Overview
@@ -72,50 +112,7 @@ Special cases handled:
    - `remaining -= toRead`
 5. When the loop ends, the output file is the input file **fully reversed**.
 
-### Example 1: Small file with small buffer
-
-**Input:** `ABCDE` (5 bytes)  
-**bufferSize:** `2`
-
-We number positions for clarity:  
-```
-A(0) B(1) C(2) D(3) E(4)
-```
-
-Initial:
-```
-fileSize = 5
-remaining = 5
-output = "" (empty)
-```
-
-**Iteration 1**
-- `toRead = min(2, 5) = 2`
-- `offset = 5 - 2 = 3`
-- `lseek(fd, 3)` → read bytes at positions 3..4 → `"DE"`
-- reverse buffer: `"ED"`
-- write → `output = "ED"`
-- `remaining = 5 - 2 = 3`
-
-**Iteration 2**
-- `toRead = min(2, 3) = 2`
-- `offset = 3 - 2 = 1`
-- `lseek(fd, 1)` → read bytes 1..2 → `"BC"`
-- reverse buffer: `"CB"`
-- write → `output = "EDCB"`
-- `remaining = 3 - 2 = 1`
-
-**Iteration 3**
-- `toRead = min(2, 1) = 1`
-- `offset = 1 - 1 = 0`
-- `lseek(fd, 0)` → read byte 0 → `"A"`
-- reverse buffer: `"A"` (unchanged)
-- write → `output = "EDCBA"`
-- `remaining = 0` → **done**
-
-**Final Output:** `EDCBA`
-
-### Example 2: Length not a multiple of buffer size
+### Example Working :
 
 **Input:** `ABCDEFGH` (8 bytes)  
 **bufferSize:** `3`  
@@ -149,19 +146,9 @@ Initial: `remaining = 8`, `output = ""`
 
 **Final Output:** `HGFEDCBA`
 
-### Example 3: Large file (conceptual)
-
-**Input size:** 1 GB+  
-**bufferSize:** 4096 bytes (4 KB)
-
-The loop will:
-- Jump back 4 KB at a time (`offset = remaining - 4096`),
-- Read 4 KB, reverse those 4 KB, write them,
-- Repeat until the beginning is reached.
-
 Memory stays small (only one buffer), but the whole file is reversed correctly.
 
-### Correctness intuition (why this always works)
+### Generalized Working - 
 
 Let the input be split into chunks from the end:  
 `[ ... | C2 | C1 ]` where `C1` is the last chunk, `C2` is the second last, etc.  
@@ -308,3 +295,14 @@ Modified file: "BADCFEGHI"
     - Region 2 ("CDEFG") unchanged → matches exactly.
     - Region 3 ("HI") reversed to "IH" → matches modified file end.
 ```
+
+# Constraints and Limitations
+
+- The input file has to be present in the same directory as the program file.
+- The directory (Assignment1) is created on the same directory where the program and input file exists.
+- For flag 0 (block wise file reversal - question 1), reversal of files on the basis of small block sizes (eg : 2, 3 etc ..) is slow.
+
+# Scope for Improvements 
+
+- More modularity could've been achieved. The current program has various redundant/repeating sections.
+- The program could be more verbose, providing clearer messages during execution.

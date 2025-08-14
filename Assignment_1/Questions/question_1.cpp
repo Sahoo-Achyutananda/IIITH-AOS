@@ -146,10 +146,15 @@ void showProgress(unsigned long long processed, unsigned long long total) {
     
     cout << fontBold << colorBlue;
     cout << "[";
-    for (int i = 0; i < barWidth; ++i) {
-        if (i < pos) cout << done;
-        else if (i == pos) cout << beingProcessed;
-        else cout << notDone;
+    const char * color;
+    for (int i = 0; i < barWidth; i++) {
+        if(i < barWidth*0.2f) color = colorRed;
+        else if(i < barWidth*0.5f) color =colorYellow;
+        else color = colorGreen;
+
+        if (i < pos) cout << color << done << reset;
+        else if (i == pos) cout << color << beingProcessed << reset;
+        else cout << color << notDone << reset;
     }
     cout << "] " << int(progress * 100.0) << "% (" 
               << processed << "/" << total << ")\r";
@@ -422,7 +427,10 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
 
     // Validate indices
     if (start >= fileSize || end >= fileSize || start > end || start < 0 || end < 0) {
-        showErrorMessage("Invalid start/end indices", false);
+        showErrorMessage("Invalid start/end indices : Offsets must be within File Size", false);
+        cout << "File Size : " << colorBlue << fontBold << fileSize << reset << endl;
+        cout << "Start Offset : " << colorBlue << fontBold << start << reset << endl;
+        cout << "End Offset : " << colorBlue << fontBold <<  end  << reset << endl;
         close(fileDescRead); 
         close(fileDescWrite);
         return;
