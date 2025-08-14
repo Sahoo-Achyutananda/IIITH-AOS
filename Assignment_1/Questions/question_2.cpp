@@ -10,7 +10,7 @@
 using namespace std;
 using namespace std::chrono;
 
-// colors and font styles
+// colors and font styles - for a better looking terminal screen
 const char* colorRed = "\033[91m"; // bright red
 const char* colorGreen = "\033[92m"; // bright green 
 const char* colorYellow = "\033[93m"; // bringht yellow 
@@ -22,6 +22,7 @@ const char* reset = "\033[0m";
 const char* fontBold = "\033[1m";
 const char* fontItalic = "\033[3m";
 
+// functions and constants
 const unsigned long long bufferSize = 4096; 
 void showTaskDescription(int type, char* fileName);
 void showDetails(string fileName, string outputPath, unsigned long long fileSize);
@@ -41,7 +42,10 @@ void throwError();
 int main(int argc, char * argv[]){
     // format : ./a.out <newfilepath> <oldfilepath> <directory> <flag> [<blockSize>|<start> <end>]
 
+    // to show time taken by the program to complete
     auto start = high_resolution_clock::now();
+
+    // getting all the arguments passed - along with error handling
     char *modifiedFilePath = argv[1];
     char *originalFilePath = argv[2];
     char *directory = argv[3];
@@ -76,12 +80,7 @@ int main(int argc, char * argv[]){
         }
     }
 
-    // preliminary file size check - 
-    // if (!checkFileSize(modifiedFilePath, originalFilePath)){
-    //     showErrorMessage("Further Processing is terminated due to indifferent file sizes", false);
-    //     return 0;
-    // };
-
+    // switch case to handle different flags
     switch(flag){
         case 0:
             if(verifyFlag0(modifiedFilePath, originalFilePath, blockSize)){
@@ -110,9 +109,13 @@ int main(int argc, char * argv[]){
             break;
     }
 
+    // checking if file sizes are same - already done by the reversal functions inidividually, this just prints yes or no with some colored format-
     bool t = checkFileSize(modifiedFilePath, originalFilePath);
+    // checking if the Assignment1 directory exists -
     bool p = checkDirectoryExists("Assignment1");
     cout << endl;
+
+    // Permission checks on input, output and directory - 
     cout << fontBold << foregroundBlue << "Permissions on Reversed File : " << modifiedFilePath << reset << endl;
     checkPermissions(modifiedFilePath);
     cout << fontBold << foregroundBlue << "Permissions on Original File : " << originalFilePath << reset << endl;
@@ -120,6 +123,8 @@ int main(int argc, char * argv[]){
     cout << fontBold << foregroundBlue << "Permissions on Directory : " << directory << reset << endl;
     checkPermissions(directory);
 
+
+    // stopping the clock and printing the total time taken
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<seconds>(stop - start);
 
@@ -164,11 +169,11 @@ bool checkDirectoryExists(const char * directoryName){
     const char* dir = directoryName;
     struct stat sb;
     if (stat(dir, &sb) == 0){
-        cout << fontBold << colorBlue << "\nWhether Directory Exists " << "(" << directoryName << ") : " << colorGreen << "YES" << reset << endl;
+        cout << fontBold << colorBlue << "Whether Directory Exists " << "(" << directoryName << ") : " << colorGreen << "YES" << reset << endl;
         return true;
     }
     else{
-        cout << fontBold << colorBlue << "\nWhether Directory Exists " << "(" << directoryName << ") : " << colorRed << "NO" << reset << endl;
+        cout << fontBold << colorBlue << "Whether Directory Exists " << "(" << directoryName << ") : " << colorRed << "NO" << reset << endl;
         return false;
     }
 }
@@ -181,10 +186,10 @@ bool checkFileSize(char * modifiedFilePath, char * originalFilePath){
     unsigned long long orgSize = lseek(orgfd, 0, SEEK_END);
 
     if(modSize == orgSize){
-        cout << fontBold << colorBlue << "\nWhether file sizes are same : " << colorGreen << "YES" << reset << endl;
+        cout << fontBold << colorBlue << "Whether file sizes are same : " << colorGreen << "YES" << reset << endl;
         return true;
     }else{
-        cout << fontBold << colorBlue << "\nWhether file sizes are same : " << colorRed << "NO" << reset << endl;
+        cout << fontBold << colorBlue << "Whether file sizes are same : " << colorRed << "NO" << reset << endl;
         return false;
     }
 }
@@ -193,10 +198,11 @@ void showProgress(unsigned long long processed, unsigned long long total) {
     static bool firstCall = true;
     
     if (firstCall) {
-         cout << "\033[?25l"; // Hide cursor
+         cout << "\033[?25l"; // Hide cursor - to hide the movement of the cursor that appears glitchy while the  progress bar is rendering
         firstCall = false;
     }
 
+    // special characters for the progress bar, initially they were set to their respective ASCII codes, but they didnt appear on the screen as expected, the special characters were taken from the web - 
     const char* done = "█";
     const char* beingProcessed = "█";
     const char* notDone = "░";
@@ -205,8 +211,6 @@ void showProgress(unsigned long long processed, unsigned long long total) {
     progress = min(1.0f, progress);
     int pos = barWidth * progress;
     cout << "\r\033[K";
-    // cout << "Processing... \r";
-    // cout.flush();
     
     cout << fontBold << colorBlue;
     cout << "[";
@@ -265,7 +269,6 @@ bool verifyFlag0(char * modifiedFilePath, char * originalFilePath, unsigned long
     }
     unsigned long long fileSize = lseek(fileDescOriginalFile, 0, SEEK_END);
     if(blockSize >= fileSize){
-        // cerr << colorRed << fontBold << "Block Size exceeds File Size" << reset << endl;
         return verifyFlag1(modifiedFilePath, originalFilePath);
     }
     // 3. create buffers to store the data to be read
@@ -513,8 +516,11 @@ bool verifyFlag2(char *modifiedFilePath, char *originalFilePath, long long start
     cout << fontBold << colorBlue <<  "\nProcessing ... " << endl;
 
     bool ok = true;
+    // verify the first half - 0 .. start-1
     if (!verifyRegion(fdOrg, fdMod, 0, startOffset, true, sizeMod, bytesProcessed)) ok = false;
+    // verify the second half - start ... end
     if (ok && !verifyRegion(fdOrg, fdMod, startOffset, endOffset - startOffset + 1, false, sizeMod, bytesProcessed)) ok = false;
+    // verify the last half - end + 1 ... EOF
     if (ok && !verifyRegion(fdOrg, fdMod, endOffset + 1, sizeOrg - endOffset - 1, true, sizeMod, bytesProcessed)) ok = false;
 
     close(fdMod);

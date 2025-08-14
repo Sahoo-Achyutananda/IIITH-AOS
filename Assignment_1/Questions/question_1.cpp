@@ -21,7 +21,7 @@ const char* reset = "\033[0m";
 const char* fontBold = "\033[1m";
 const char* fontItalic = "\033[3m";
 
-// modules and constants -
+// functions and constants -
 const int bufferSize = 4096;
 void throwError();
 void showProgress(unsigned long long processed, unsigned long long total);
@@ -37,7 +37,7 @@ void reverseRange(char* name, unsigned long long startIndex, unsigned long long 
 int main(int argc, char* argv[]){
     // command format - ./a.out <input file name> <flag> => total count = 3
     auto start = high_resolution_clock::now();
-    if(argc < 3){ // mini. 3 arguments are needed !
+    if(argc < 3){ // mininum 3 arguments are needed !
         throwError();
         return 1;
     }
@@ -48,7 +48,6 @@ int main(int argc, char* argv[]){
     // handling flag Out of Bound error -
     if(flag < 0 || flag > 2){
         showErrorMessage("Invalid Flag", false);
-        //  cerr << colorRed << fontBold << "Invalid Flag" << "\n" << reset;
         throwError();
         return 1;
     }
@@ -116,10 +115,11 @@ void showProgress(unsigned long long processed, unsigned long long total) {
     static bool firstCall = true;
     
     if (firstCall) {
-         cout << "\033[?25l"; // Hide cursor
+         cout << "\033[?25l"; // Hide cursor - to hide the movement of the cursor that appears glitchy while the  progress bar is rendering
         firstCall = false;
     }
 
+    // special characters for the progress bar, initially they were set to their respective ASCII codes, but they didnt appear on the screen as expected, the special characters were taken from the web - 
     const char* done = "█";
     const char* beingProcessed = "█";
     const char* notDone = "░";
@@ -128,8 +128,6 @@ void showProgress(unsigned long long processed, unsigned long long total) {
     progress = min(1.0f, progress);
     int pos = barWidth * progress;
     cout << "\r\033[K";
-    // cout << "Processing... \r";
-    // cout.flush();
     
     cout << fontBold << colorBlue;
     cout << "[";
@@ -165,7 +163,6 @@ void showErrorMessage(const char * message, bool showErno){
 
 void showTaskDescription(int type, char* fileName){
     cout << "\n" << fontBold << foregroundGreen << " Task " << reset;
-    // cout << fontBold << string(foregroundGreen) << "\n Task " << reset;
     switch(type){
         case 0 :
             cout << string(foregroundBlue) << fontBold << " Block Wise Reversal on file - " << fileName << " " << reset << reset << "\n";
@@ -220,17 +217,20 @@ void copyFile(const char* source, const char* destination){
     close(destfd);
 
 }
+
+// used as a helper function
 void reverseBuffer(char *buffer, unsigned long long size){
     for(int i = 0; i< size/2; i++){
         swap(buffer[i], buffer[size - i - 1]);
     }
 }
 
+
+// Flag 0
 void reverseBlocks(char *name, unsigned long long blockSize){
     // edge case : invalid block size
     if(blockSize <= 0){
         showErrorMessage("Block Size must be greater than 0", false);
-        // cerr << colorRed << fontBold << "Block Size must be greater than 0" << reset << endl;
         return;
     }
     
@@ -239,7 +239,6 @@ void reverseBlocks(char *name, unsigned long long blockSize){
     // edge case : invalid file name/ file doesnt exist
     if(fileDescRead < 0){
         showErrorMessage("Error Opening Source File . ", true); 
-        // cerr << "Error Opening Source File : " << strerror(errno) << "\n";
         return;
     }
     long long fileSize = lseek(fileDescRead, 0 ,SEEK_END);
@@ -251,21 +250,17 @@ void reverseBlocks(char *name, unsigned long long blockSize){
 
     string outputPath = "Assignment1/0_" + fileName;  
 
-    // mode_t old_mask = umask(0);  // Disable umask
-    mkdir("Assignment1", 0700);  // Force 700 permissions
-    // umask(old_mask);            // Restore original umask
+    mkdir("Assignment1", 0700);  // Force 700 permissions - didnt work used chmod at the end of the function
 
     unsigned long long fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);// create a new file to write the reversed version of the source file
     if(fileDescWrite < 0){
         showErrorMessage("Error Creating Destination File", true);
-        // cerr << "Error Creating Destination File : " << strerror(errno) << "\n";
         close(fileDescRead);
         return;
     }
 
     if(fileSize < 0){
         showErrorMessage("Error retrieving File Size", true);
-        // cerr << "Error retrieving File Size : " << strerror(errno) << "\n";
         close(fileDescRead);
         close(fileDescWrite);
         return;
@@ -297,7 +292,6 @@ void reverseBlocks(char *name, unsigned long long blockSize){
 
     if(bytesRead < 0){
         showErrorMessage("Error reading Source File", true);
-        // cerr<< "Error reading Source File : " << strerror(errno) << "\n";
     }
 
     showSuccessMessage();
@@ -307,33 +301,28 @@ void reverseBlocks(char *name, unsigned long long blockSize){
     close(fileDescWrite);
 }
 
+//Flag 1
 void reverseComplete(char * name){
     string fileName = name;
     long long fileDescRead = open(name, O_RDONLY); 
     if (fileDescRead < 0) {
-        // cout << "File Name : " << fileName << endl;
         showErrorMessage("Error Opening Source File", true);
-        // cerr << "Error Opening Source File : " << strerror(errno) << "\n";
         return;
     }
     string outputPath = "Assignment1/1_" + string(name);
 
-    // mode_t old_mask = umask(0);  // Disable umask - CREATING ISSUES MAYBE
     mkdir("Assignment1", 0700);  // Force 700 permissions
-    // umask(old_mask);            // Restore original umask
     
 
     long long fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR, 0600);// create a new file to write the reversed version of the source file
     if(fileDescWrite < 0){
         showErrorMessage("Error Creating Destination File", true);
-        // cerr << "Error Creating Destination File : " << strerror(errno) << "\n";
         return;
     }
 
     unsigned long long fileSize = lseek(fileDescRead, 0 ,SEEK_END);
     if(fileSize < 0){
         showErrorMessage("Error retrieving File Size", true);
-        // cerr << "Error retrieving File Size : " << strerror(errno) << "\n";
         close(fileDescRead);
         close(fileDescWrite);
         return;
@@ -355,14 +344,12 @@ void reverseComplete(char * name){
         long long bytesRead = read(fileDescRead, buffer, toRead);
         if (bytesRead < 0) {
             showErrorMessage("Error Reading Input", true);
-            //  cerr << "Error reading input: " << strerror(errno) << "\n";
             break;
         }
         reverseBuffer(buffer, bytesRead);
         long long bytesWritten = write(fileDescWrite, buffer, bytesRead);
         if (bytesWritten < 0) {
             showErrorMessage("Error Writing to Output", true);
-            //  cerr << "Error writing to output: " << strerror(errno) << "\n";
             break;
         }
         bytesProcessed+=bytesRead;
@@ -377,25 +364,22 @@ void reverseComplete(char * name){
     return;
 }
 
+// Flag 2
 void reverseRange(char* name, unsigned long long start, unsigned long long end) {
     string fileName = name;
     int fileDescRead = open(name, O_RDONLY); 
     if (fileDescRead < 0) {
         showErrorMessage("Error Opening Source File", true);
-        //  cerr << "Error Opening Source File : " << strerror(errno) << "\n";
         return;
     }
 
     string outputPath = "Assignment1/2_" + string(name);
  
-    // mode_t old_mask = umask(0);  // Disable umask
-    mkdir("Assignment1", 0700);  // Force 700 permissions
-    // umask(old_mask);            // Restore original umask
+    mkdir("Assignment1", 0700);
 
     int fileDescWrite = open(outputPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
     if (fileDescWrite < 0) {
         showErrorMessage("Error Creating Destination File", true);
-        //  cerr << "Error Creating Destination File : " << strerror(errno) << "\n";
         close(fileDescRead);
         return;
     }
@@ -406,7 +390,6 @@ void reverseRange(char* name, unsigned long long start, unsigned long long end) 
     // Validate indices
     if (start >= fileSize || end >= fileSize || start > end || start < 0 || end < 0) {
         showErrorMessage("Invalid start/end indices", false);
-        //  cerr << "Invalid start/end indices.\n";
         close(fileDescRead); 
         close(fileDescWrite);
         return;
