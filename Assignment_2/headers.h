@@ -16,6 +16,7 @@
 #include <ctime>
 #include <iostream>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 const long long CHAR_LEN_MAX = 256;
 std::string shellHome;

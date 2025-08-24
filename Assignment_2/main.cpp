@@ -3,20 +3,24 @@
 #include "clear.h"
 #include "basicops.h"
 #include "ls.h"
+#include "systemCommands.h"
 
 using namespace std;
 
 void runCommand(char * cmd){
     char * args[50];
     int i = 0;
-
+    bool bgProcess = false; // by default bg process is false
     char delimiter[5] = " \t\n"; // we have to ignore these - " ", tabs and new lines
 
     char * token = strtok(cmd, delimiter);
 
     while(token){
-        args[i] = token;
-        i++;
+        if(strcmp(token, "&") == 0){
+            bgProcess = true;
+        } else {
+            args[i++] = token;
+        }
         token = strtok(NULL, delimiter);
     }
     args[i] = NULL;  // Without it,runEcho keep reading garbage memory.
@@ -39,6 +43,13 @@ void runCommand(char * cmd){
     if(strcmp(args[0], "ls") == 0){
         runLS(args);
         return;
+    }
+
+
+    if(bgProcess){
+        background(args);
+    } else {
+        foreground(args);
     }
 }
 
