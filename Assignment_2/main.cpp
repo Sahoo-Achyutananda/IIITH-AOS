@@ -13,15 +13,16 @@ void runCommand(char * cmd){
     bool bgProcess = false; // by default bg process is false
     char delimiter[5] = " \t\n"; // we have to ignore these - " ", tabs and new lines
 
-    char * token = strtok(cmd, delimiter);
+    char * save = nullptr;
+    char * token = strtok_r(cmd, delimiter, &save);
 
     while(token){
         if(strcmp(token, "&") == 0){
-            bgProcess = true;
+            bgProcess = true; // detecting 
         } else {
             args[i++] = token;
         }
-        token = strtok(NULL, delimiter);
+        token = strtok_r(NULL, delimiter, &save);
     }
     args[i] = NULL;  // Without it,runEcho keep reading garbage memory.
     if(args[0] == NULL) return;
@@ -46,12 +47,25 @@ void runCommand(char * cmd){
     }
 
 
+    // fallback - any other command not fromt he  assignment
     if(bgProcess){
         background(args);
     } else {
         foreground(args);
     }
 }
+
+// utility to trim leading/trailing spaces
+char* trim(char* str) {
+    // remove spaces at the start
+    while(isspace(*str)) str++;
+    char *end = str + strlen(str) - 1;
+    // remove spaces from the end
+    while(end > str && isspace(*end)) *end-- = '\0';
+
+    return str;
+}
+
 
 int main(){
     // getting the l;ocation where the shell program resides - 
@@ -77,17 +91,20 @@ int main(){
         }
 
         char * cmdLine = strdup(input.c_str());
-        char * cmd = strtok(cmdLine, ";"); // handle multiple commands separated by command lines
+        char * save = nullptr;
+        char * cmd = strtok_r(cmdLine, ";", &save); // handle multiple commands separated by command lines
 
         while(cmd != NULL){
-            runCommand(cmd);
-            cmd = strtok(NULL, ";");
+            char * trimmedCmd = trim(cmd);
+            if(trimmedCmd)
+                runCommand(trimmedCmd);
+            cmd = strtok_r(NULL, ";", &save);
         }
 
         free(cmdLine);
         
     }
-    
+
     
 
 }
