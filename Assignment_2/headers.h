@@ -16,6 +16,8 @@
 #include <ctime>
 #include <iostream>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <stdlib.h>
 #include <sys/wait.h>
 
 const long long CHAR_LEN_MAX = 256;

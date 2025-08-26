@@ -4,6 +4,7 @@
 #include "basicops.h"
 #include "ls.h"
 #include "systemCommands.h"
+#include "pinfo.h"
 
 using namespace std;
 
@@ -45,6 +46,12 @@ void runCommand(char * cmd){
         runLS(args);
         return;
     }
+
+    if (strcmp(args[0], "pinfo") == 0) {
+        runPinfo(args);
+        return;
+    }
+
 
 
     // fallback - any other command not fromt he  assignment

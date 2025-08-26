@@ -14,3 +14,8 @@ References : [gfg](https://www.geeksforgeeks.org/cpp/strtok-strtok_r-functions-c
 
 - wait :[Man Pages](https://man7.org/linux/man-pages/man3/wait.3p.html)
 - exec : [Man Pages](https://man7.org/linux/man-pages/man3/exec.3.html)
+
+WTF is a symlink - [fcc](https://www.freecodecamp.org/news/symlink-tutorial-in-linux-how-to-create-and-remove-a-symbolic-link/)
+- readlink : [Man Pages](https://man7.org/linux/man-pages/man2/readlink.2.html)
+- proc/pid/exe : [Man Pages](https://man7.org/linux/man-pages/man5/proc_pid_exe.5.html)
+- proc : [Man Pages](https://man7.org/linux/man-pages/man5/proc.5.html) <proc pseudo file system>
