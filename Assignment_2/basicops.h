@@ -2,6 +2,8 @@
 #define BASICOPS_H
 // Part 2 : implementing cd, echo and pwd 
 #include "headers.h"
+#include "io.h"
+
 using namespace std;
 
 string prevDir = "";
@@ -62,11 +64,36 @@ void runPwd(){
 }
 
 void runEcho(char * arg[]){
-    for(int i = 1; arg[i] != NULL; i++){
-        cout << arg[i];
-        if(arg[i+1])cout << " ";
+    int symbolPos = -1; // to track > and  >> 
+    for (int i = 1; arg[i] != NULL; i++) {
+        if (strcmp(arg[i], ">") == 0 || strcmp(arg[i], ">>") == 0) {
+            symbolPos = i;
+            break;
+        }
     }
-    cout << endl;
+
+    if(symbolPos == -1){
+        for(int i = 1; arg[i] != NULL; i++){
+            cout << arg[i];
+            if(arg[i+1])cout << " ";
+        }
+        cout << endl;
+        return;
+    }else{
+        char *op = arg[symbolPos];
+        char *fileName = arg[symbolPos + 1];
+
+        if (fileName == NULL) {
+            cerr << colorRed << fontBold << "Error: Missing output file " << reset << endl;
+            return;
+        }
+
+        if(strcmp(op, ">") == 0){
+            echoIOComplete(fileName, arg, symbolPos);
+        }else if(strcmp(op, ">>")== 0){
+            echoIOAppend(fileName, arg, symbolPos);
+        }
+    }
 }
 
 #endif // BASICOPS_H

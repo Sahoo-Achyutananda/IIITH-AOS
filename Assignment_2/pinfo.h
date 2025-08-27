@@ -4,6 +4,40 @@
 #include "headers.h"
 using namespace std;
 
+
+void printProcessStatus(long long pid) {
+    char path[PATH_MAX];
+    snprintf(path, sizeof(path), "/proc/%d/stat", pid);
+
+    int fd = open(path, O_RDONLY);
+    if (fd < 0) {
+        perror("open");
+        return;
+    }
+
+    char buffer[1024];
+    int n = read(fd, buffer, sizeof(buffer)-1);
+    close(fd);
+    if (n <= 0) {
+        perror("read");
+        return;
+    }
+
+    buffer[n] = '\0';
+
+    int pgrp, tpgid;
+    char state;
+    sscanf(buffer, "%*d %*s %c %*d %d %*d %*d %d", &state, &pgrp, &tpgid);
+
+    long long fg_pgrp = tcgetpgrp(STDIN_FILENO);
+
+    if (pgrp == fg_pgrp) {
+        printf("Process status -- %c+\n", state);
+    } else {
+        printf("Process status -- %c\n", state);
+    }
+}
+
 void runPinfo(char **args){
     long long pid;
 
@@ -22,8 +56,8 @@ void runPinfo(char **args){
         return;
     }
 
-    int ppid; char state;
-    fscanf(fp, "%*d %*s %c %d", &state, &ppid); 
+    int ppid;
+    fscanf(fp, "%*d %*s %*c %d", &ppid); 
     fclose(fp);
 
     snprintf(processPath, PATH_MAX, "/proc/%d/statm", pid);
@@ -46,7 +80,8 @@ void runPinfo(char **args){
     }
 
     printf("pid -- %d\n", pid);
-    printf("Process Status -- %c\n", state);
+    printProcessStatus(pid);
+    // printf("Process Status -- %c\n", state);
     printf("memory -- %ld\n", mem);
     printf("Executable Path -- %s\n", exePath);
 

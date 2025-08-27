@@ -5,6 +5,7 @@
 #include "ls.h"
 #include "systemCommands.h"
 #include "pinfo.h"
+#include "filesearch.h"
 
 using namespace std;
 
@@ -49,6 +50,11 @@ void runCommand(char * cmd){
 
     if (strcmp(args[0], "pinfo") == 0) {
         runPinfo(args);
+        return;
+    }
+
+    if(strcmp(args[0], "search") == 0){
+        searchFileHelper(args);
         return;
     }
 
