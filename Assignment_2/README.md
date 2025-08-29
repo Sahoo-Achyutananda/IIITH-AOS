@@ -30,4 +30,10 @@ The readdir() function returns a pointer to a dirent structurerepresenting the n
 
 - youtube videos : 
   [codevault - dup and dup2](https://www.youtube.com/watch?v=5fnVr-zH-SE)
-  []()
+  [dup2 - Man Pages](https://man7.org/linux/man-pages/man2/dup.2.html)
+
+-- pipes
+  [codevault - pipe](https://www.youtube.com/watch?v=Mqb2dVRe0uo&t=440s)
+  [codevault - fork and pipe](https://www.youtube.com/watch?v=6u_iPGVkfZ4)
+  [pipe - man pages](https://man7.org/linux/man-pages/man2/pipe.2.html)
+

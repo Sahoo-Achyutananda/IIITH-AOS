@@ -6,8 +6,11 @@
 #include "systemCommands.h"
 #include "pinfo.h"
 #include "filesearch.h"
+#include "io.h"
+#include "history.h"
 
 using namespace std;
+
 
 void runCommand(char * cmd){
     char * args[50];
@@ -38,6 +41,10 @@ void runCommand(char * cmd){
         runEcho(args);
         return;
     }
+    if(strcmp(args[0], "cat") == 0){
+        runCat(args);
+        return;
+    }
     if(strcmp(args[0], "cd") == 0){
         runCd(args);
         return;
@@ -58,7 +65,10 @@ void runCommand(char * cmd){
         return;
     }
 
-
+    if(strcmp(args[0], "history") == 0){
+        printHistory();
+        return;
+    }
 
     // fallback - any other command not fromt he  assignment
     if(bgProcess){
@@ -90,19 +100,26 @@ int main(){
     }
     shellHome = cwd;
     
+    // enableRawMode();// we're entering a black hole
+
     clearScreen();
+    addToHistory();
     string input;
     while(1){
         printPrompt();
-        if(!getline(cin,input)) break;
+        cout << flush;
+        // if(!getline(cin,input)) break;
+        string input = readInput();
 
         if (input == "clear"){
             clearScreen();
         }
         if(input == "exit"){
+            saveHistory();
             break;
         }
 
+        appendToHistory(input.c_str());
         char * cmdLine = strdup(input.c_str());
         char * save = nullptr;
         char * cmd = strtok_r(cmdLine, ";", &save); // handle multiple commands separated by command lines
@@ -117,7 +134,6 @@ int main(){
         free(cmdLine);
         
     }
-
-    
-
+    // disableRawMode();
 }
+
