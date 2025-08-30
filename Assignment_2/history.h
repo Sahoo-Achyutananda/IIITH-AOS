@@ -11,7 +11,7 @@
 
 using namespace std;
 
-# define HISTORY ".history"
+# define HISTORY "/home/achyutananda-sahoo/Desktop/IIITH-AOS/Assignment_2/.history"
 
 int maxHistoryLimt = 20;
 int currentHistoryCount = 0;
@@ -26,6 +26,13 @@ struct termios defaultTerminalSettings;
 void disableRawMode(){
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &defaultTerminalSettings);
 }
+
+// void redrawCurrentLine(const string& input) {
+//     // Move to beginning of line and clear entire line
+//     cout << "\r\033[K" << flush;
+//     printPrompt();
+//     cout << input << flush;
+// }
 
 // enable non-canonical mode
 void enableRawMode(){
@@ -116,6 +123,10 @@ void printHistory(char *args[]){
         }
     }else{
         int lim = atoi(args[1]);
+        if(lim <= 0){
+            cerr << fontBold << colorRed << "History Limit must be a +ve Number" << reset << endl;
+            return;
+        }
         if(lim > history.size()) lim = history.size();
 
         for(int i = history.size() - lim; i < history.size(); i++){
@@ -182,7 +193,6 @@ void printHistory(char *args[]){
 //             input.push_back(c);
 //             cout << c;
 //         }
-
 //     }
 // }
 
@@ -221,6 +231,12 @@ string readInput() {
         }
         else if (c == '\t') {
             handleAutocomplete(input);
+
+            // few importnt lines - 
+            // cout << "\033[K" << flush;
+            // printPrompt();
+            // cout << input << flush;
+
         }
         else if (c == 27) {
             // Escape sequence (likely arrow keys)

@@ -8,11 +8,20 @@
 #include "filesearch.h"
 #include "io.h"
 #include "history.h"
+#include "pipeline.h"
 
 using namespace std;
 
 
 void runCommand(char * cmd){
+    // pehle check karlo kahi pipeline toh nahi hai
+    if(strstr(cmd, "|") != NULL){
+        // vector<vector<string>> commands = parsePipeline(cmd);
+        // cout << "debug" << endl;
+        executePipeline(cmd);
+        return;
+    }
+
     char * args[50];
     int i = 0;
     bool bgProcess = false; // by default bg process is false

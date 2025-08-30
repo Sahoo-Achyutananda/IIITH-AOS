@@ -1,20 +1,20 @@
-cat test2.txt
-history 4
+ls
+cd test
 clear
-echo test >> test2.txt
-echo run >> test2.txt
-echo basket >> test2.txt
-cat test2.txt
-sort test2.txt > test.txt
+cd
+cd~
+cd ~
+pwd
 clear
-sort test2.txt > test.txt
-cat test2.txt
-cat test.txt
-clear
-sort test2.txt > test.txt
-sort test2.txt > test.txt
-sort test2.txt > test.txt
-sort test2.txt > test.txt
-clear
+cd test
 ls -l
+g++ a.cpp
+cd ..
+cd test2
+ls -la
+g++ a.cpp
+./a.out
 clear
+cd ~
+git status
+git add .
