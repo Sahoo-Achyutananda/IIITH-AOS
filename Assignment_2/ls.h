@@ -30,7 +30,6 @@ void printFileLong(const string &path, const string &name, const struct stat &st
 
     // size
     cout << " " << setw(6) << st.st_size;
-
     // time (last modified)
     char timebuf[80];
     strftime(timebuf, sizeof(timebuf), "%b %d %H:%M", localtime(&st.st_mtime));
@@ -49,6 +48,8 @@ void listDirectory(const string &path, bool a, bool l){
 
     struct dirent *entry;
     // entry = readdir(dir);
+    long long totalBlocks = 0;
+    
     while((entry = readdir(dir))!= NULL){
         string name = entry->d_name;
 

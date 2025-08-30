@@ -1,20 +1,20 @@
-gedit &
-history
-gedit
+cat test2.txt
+history 4
 clear
-hello
-hello
+echo test >> test2.txt
+echo run >> test2.txt
+echo basket >> test2.txt
+cat test2.txt
+sort test2.txt > test.txt
 clear
-echo hello
-echo
-echo
-exhi
+sort test2.txt > test.txt
+cat test2.txt
+cat test.txt
 clear
-echo
-echo hello
-echo hello
-history
-echo hello
-echo hello
+sort test2.txt > test.txt
+sort test2.txt > test.txt
+sort test2.txt > test.txt
+sort test2.txt > test.txt
 clear
-echo helloworld
+ls -l
+clear

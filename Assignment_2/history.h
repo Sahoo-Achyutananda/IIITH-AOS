@@ -4,6 +4,7 @@
 #include "headers.h"
 #include "colors.h"
 #include "prompt.h"
+#include "autocomplete.h"
 #include <termios.h>
 #include <vector>
 #include <string>
@@ -108,9 +109,18 @@ void appendToHistory(const char * cmd){
     saveHistory();
 }
 
-void printHistory(){
-    for(int i =0; i < history.size(); i++){
-        cout << history[i] << endl;
+void printHistory(char *args[]){
+    if(args[1] == NULL){
+        for(int i =0; i < history.size(); i++){
+            cout << history[i] << endl;
+        }
+    }else{
+        int lim = atoi(args[1]);
+        if(lim > history.size()) lim = history.size();
+
+        for(int i = history.size() - lim; i < history.size(); i++){
+            cout << history[i] << endl;
+        }
     }
 }
 
@@ -208,6 +218,9 @@ string readInput() {
                 input.pop_back();
                 cout << "\b \b" << flush;
             }
+        }
+        else if (c == '\t') {
+            handleAutocomplete(input);
         }
         else if (c == 27) {
             // Escape sequence (likely arrow keys)

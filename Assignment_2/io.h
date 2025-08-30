@@ -3,6 +3,7 @@
 
 #include "headers.h"
 #include "colors.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -102,30 +103,72 @@ void runCat(char * arg[]){
 
 void sortIO(char * arg[]){
     char * sourceFile = arg[1];
-    char * destinationFile = arg[2];
+    char * destinationFile = arg[3];
+
+    if(strcmp(arg[2], ">") != 0 ){
+        cerr << fontBold << colorRed << "Usage : sort <source_filename> > <destination_filename>" << reset << endl;
+        return;
+    }
 
     if(sourceFile == NULL || destinationFile == NULL){
-        cerr << fontBold << colorRed << "Usage : sort <source_filename> <destination_filename>" << reset << endl;
+        cerr << fontBold << colorRed << "Usage : sort <source_filename> > <destination_filename>" << reset << endl;
+        return;
     }
 
     long long fds = open(sourceFile, O_RDONLY);
-    long long fdd = open(destinationFile, O_WRONLY | O_APPEND | O_TRUNC);
+    long long fdd = open(destinationFile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
     if(fds < 0){
         cerr << fontBold << colorRed << "Error opening source file" << reset << endl;
+        close(fds);
+        close(fdd);
+        return;
     }
 
     if(fdd < 0){
-        cerr << fontBold << colorRed << "Error opening destination file" << reset << endl;
+        cerr << fontBold << colorRed << "Error accessing destination file" << reset << endl;
+        close(fds);
+        close(fdd);
+        return;
     }
 
+    vector<string> lines;
+    char * buffer = new char[1024];
+
+    long long r = read(fds, buffer, 1024);
+
+    string temp = "";
+
+    while(r > 0){
+        int c = 0;
+        for(int c = 0; c < r; c++){
+            if(buffer[c] != '\n'){
+                temp.push_back(buffer[c]);
+            }else{
+                lines.push_back(temp);
+                temp.clear();
+            }
+        }    
+        r = read(fds,buffer,1024);
+    }
+
+    sort(lines.begin(), lines.end());
+
+    long long tempHolder = dup(STDOUT_FILENO);
+    dup2(fdd,STDOUT_FILENO);
+    close(fdd);
+
+    for(auto &l : lines){
+        cout << l << endl;
+    }
+    cout.flush();
+
+    delete [] buffer;
+
+    dup2(tempHolder, STDOUT_FILENO);
+    close(tempHolder);
 
 
-
-
-
-
-    
 }
 
 #endif // IO_H

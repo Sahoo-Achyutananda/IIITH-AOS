@@ -66,7 +66,12 @@ void runCommand(char * cmd){
     }
 
     if(strcmp(args[0], "history") == 0){
-        printHistory();
+        printHistory(args);
+        return;
+    }
+
+    if(strcmp(args[0], "sort") == 0){
+        sortIO(args);
         return;
     }
 
@@ -107,7 +112,7 @@ int main(){
     string input;
     while(1){
         printPrompt();
-        cout << flush;
+        cout << flush; // this is importatn - idk why .. but without this it didnt work properly
         // if(!getline(cin,input)) break;
         string input = readInput();
 
