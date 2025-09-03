@@ -209,6 +209,7 @@ string readInput() {
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
     
     string input;
+    
     navigator = history.size();
     
     while (true) {
@@ -221,7 +222,14 @@ string readInput() {
             // Enter key
             cout << endl;
             break;
-        } 
+        }
+        else if (c == 4) {  // ASCII 4 = Ctrl+D
+            // RESTORE terminal before exiting
+            tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_termios);
+            cout << "\nexit" << endl;
+            saveHistory();
+            exit(0);
+        }
         else if (c == 127 || c == '\b') {
             // Backspace
             if (!input.empty()) {

@@ -171,4 +171,51 @@ void sortIO(char * arg[]){
 
 }
 
+
+// pipeline is not pipelining 
+// void runCatSimple() {
+//     char buffer[1024];
+//     long long bytes = read(STDIN_FILENO, buffer, 1024);
+//     while(bytes > 0) {
+//         write(STDOUT_FILENO, buffer, bytes);
+//         bytes = read(STDIN_FILENO, buffer, 1024);
+//     }
+// }
+
+void runEchoSimple(char *arg[]) {
+    for(int i = 1; arg[i] != nullptr; i++) {
+        write(STDOUT_FILENO, arg[i], strlen(arg[i]));
+        if(arg[i+1] != nullptr) {
+            write(STDOUT_FILENO, " ", 1);
+        }
+    }
+    write(STDOUT_FILENO, "\n", 1);
+}
+
+void runCatSimple(char * arg[]) {
+    int i = 1;
+    while(arg[i] != NULL) {
+        // Only process non-redirection arguments
+        if(strcmp(arg[i], "<") == 0 || strcmp(arg[i], ">") == 0 || strcmp(arg[i], ">>") == 0) {
+            i += 2; // skip symbol and filename
+            continue;
+        }
+        
+        int fd = open(arg[i], O_RDONLY);
+        if(fd < 0) {
+            cerr << fontBold << colorRed << "Erroe Opening FIle" << reset << endl;
+            i++;
+            continue;
+        }
+        
+        char buffer[1024];
+        ssize_t bytes;
+        while((bytes = read(fd, buffer, sizeof(buffer))) > 0) {
+            write(STDOUT_FILENO, buffer, bytes);
+        }
+        
+        close(fd);
+        i++;
+    }
+}
 #endif // IO_H

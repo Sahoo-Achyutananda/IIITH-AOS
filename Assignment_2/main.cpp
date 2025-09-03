@@ -8,6 +8,7 @@
 #include "filesearch.h"
 #include "io.h"
 #include "history.h"
+#include "signals.h"
 #include "pipeline.h"
 
 using namespace std;
@@ -18,7 +19,7 @@ void runCommand(char * cmd){
     if(strstr(cmd, "|") != NULL){
         // vector<vector<string>> commands = parsePipeline(cmd);
         // cout << "debug" << endl;
-        executePipeline(cmd);
+        executeCommands(cmd);
         return;
     }
 
@@ -103,9 +104,11 @@ char* trim(char* str) {
     return str;
 }
 
-
 int main(){
     // getting the l;ocation where the shell program resides - 
+    signal(SIGINT, ctrlC);   // Ctrl+C
+    signal(SIGTSTP, ctrlZ);  // Ctrl+Z
+    
     char cwd[CHAR_LEN_MAX];
     char * c = getcwd(cwd,CHAR_LEN_MAX);
     if(!c){
@@ -124,7 +127,7 @@ int main(){
         cout << flush; // this is importatn - idk why .. but without this it didnt work properly
         // if(!getline(cin,input)) break;
         string input = readInput();
-
+        
         if (input == "clear"){
             clearScreen();
         }

@@ -65,10 +65,10 @@ void listDirectory(const string &path, bool a, bool l){
         if (l)
             printFileLong(path, name, st);
         else
-            cout << name << " ";
+            cout << name << endl;
     }
 
-    cout << endl;
+    // cout << endl;
 
     closedir(dir);
 }
