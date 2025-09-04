@@ -6,7 +6,8 @@ using namespace std;
 
 void printFileLong(const string &path, const string &name, const struct stat &st){
     // file type
-    cout << (S_ISDIR(st.st_mode) ? "d" : "-");
+    bool isDir = S_ISDIR(st.st_mode) ;
+    cout << (isDir ? "d" : "-");
 
     // permissions
     cout << ((st.st_mode & S_IRUSR) ? "r" : "-");
@@ -35,14 +36,17 @@ void printFileLong(const string &path, const string &name, const struct stat &st
     strftime(timebuf, sizeof(timebuf), "%b %d %H:%M", localtime(&st.st_mtime));
     cout << " " << timebuf;
 
-    // name
-    cout << " " << name << endl;
+    // name - with colour coding
+    if(isDir){
+        cout << " " << fontBold << colorBlue << name  << reset << endl;
+    }else
+        cout << " " << name << endl;
 }
 
 void listDirectory(const string &path, bool a, bool l){
     DIR *dir = opendir(path.c_str());
     if(!dir){
-        cerr << "error opening path : " << path << endl;
+        cerr << fontBold << colorRed << "error opening path : " << path << reset << endl;
         return;
     }
 
@@ -59,13 +63,17 @@ void listDirectory(const string &path, bool a, bool l){
 
         struct stat st;
         if(stat(fullPath.c_str(), &st) == -1){
-            cerr << "error retrieving file info" << endl;
+            cerr << fontBold << colorRed << "error retrieving file info" << reset << endl;
             continue;
         }
+        bool isDir = S_ISDIR(st.st_mode);
         if (l)
             printFileLong(path, name, st);
         else
-            cout << name << endl;
+            if(isDir)
+                cout << fontBold << colorBlue << name << reset << endl;
+            else
+                cout << name << endl;
     }
 
     // cout << endl;
@@ -107,7 +115,7 @@ void runLS(char *args[]){
             cout << path[i] << ":" << endl;
         }
         if(stat(path[i].c_str(), &st) == -1){
-            cerr << "error opening path : " << path[i] << endl;
+            cerr << fontBold << colorRed <<  "error opening path : " << path[i] << reset << endl;
             continue;
         }
 
@@ -119,7 +127,6 @@ void runLS(char *args[]){
             else
                 cout << path[i] << endl;
         }
-
         if (i < pathcount - 1) cout << endl;
     }
 

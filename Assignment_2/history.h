@@ -7,11 +7,14 @@
 #include "autocomplete.h"
 #include <termios.h>
 #include <vector>
+#include <algorithm>
 #include <string>
 
 using namespace std;
 
-# define HISTORY "/home/achyutananda-sahoo/Desktop/IIITH-AOS/Assignment_2/.history"
+// this shouldn't have been hardcoded - will not work in other's system
+// # define HISTORY "/home/achyutananda-sahoo/Desktop/IIITH-AOS/Assignment_2/.history"
+// string historyPath = shellHome + "/.history" ;
 
 int maxHistoryLimt = 20;
 int currentHistoryCount = 0;
@@ -23,34 +26,28 @@ struct termios defaultTerminalSettings;
 
 // diable raw mode
 
-void disableRawMode(){
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &defaultTerminalSettings);
-}
-
-// void redrawCurrentLine(const string& input) {
-//     // Move to beginning of line and clear entire line
-//     cout << "\r\033[K" << flush;
-//     printPrompt();
-//     cout << input << flush;
+// void disableRawMode(){
+//     tcsetattr(STDIN_FILENO, TCSAFLUSH, &defaultTerminalSettings);
 // }
+// // enable non-canonical mode
+// void enableRawMode(){
+//     tcgetattr(STDIN_FILENO, &defaultTerminalSettings);
+//     // atexit(disableRawMode);
 
-// enable non-canonical mode
-void enableRawMode(){
-    tcgetattr(STDIN_FILENO, &defaultTerminalSettings);
-    // atexit(disableRawMode);
+//     // apply new settings
+//     struct termios org = defaultTerminalSettings;
+//     org.c_lflag &= ~(ECHO | ICANON);
+//     org.c_cc[VMIN] = 1;
+//     org.c_cc[VTIME] = 0;
 
-    // apply new settings
-    struct termios org = defaultTerminalSettings;
-    org.c_lflag &= ~(ECHO | ICANON);
-    org.c_cc[VMIN] = 1;
-    org.c_cc[VTIME] = 0;
-
-    tcsetattr(STDIN_FILENO,TCSAFLUSH, &org);
-}
+//     tcsetattr(STDIN_FILENO,TCSAFLUSH, &org);
+// }
 
 // loading the history file
 void addToHistory(){
-    long long fd = open(HISTORY, O_RDONLY);
+    
+    long long fd = open(historyPath.c_str(), O_RDONLY);
+    // long long fd = open(HISTORY, O_RDONLY);
     if(fd < 0){
         cerr << fontBold << colorRed << "Error reaading .history file" << reset << endl;
         return;
@@ -86,7 +83,9 @@ void addToHistory(){
 
 // after the terminal exits - we save the commands to the history file
 void saveHistory(){
-    long long fd = open(HISTORY, O_WRONLY | O_TRUNC | O_APPEND, 0644);
+    long long fd = open(historyPath.c_str(), O_WRONLY | O_TRUNC | O_APPEND, 0644);
+
+    // long long fd = open(HISTORY, O_WRONLY | O_TRUNC | O_APPEND, 0644);
     if(fd < 0){
         cerr << fontBold << colorRed << "Error reaading .history file" << reset << endl;
         return;
@@ -117,9 +116,21 @@ void appendToHistory(const char * cmd){
 }
 
 void printHistory(char *args[]){
+    // debug - 
+    // cout << historyPath << endl;
+
     if(args[1] == NULL){
-        for(int i =0; i < history.size(); i++){
+        // for(int i =0; i < history.size(); i++){
+        //     cout << history[i] << endl;
+        // }
+        long long lim;
+        if(history.size() >= 10)lim = 10;
+        else lim = history.size();
+
+        int i = history.size() - lim ;
+        while(lim--){
             cout << history[i] << endl;
+            i++;
         }
     }else{
         int lim = atoi(args[1]);
@@ -136,65 +147,6 @@ void printHistory(char *args[]){
 }
 
 // since we are in the raw mode - i have to handle backspaces manually lolllllllllll ... 
-// string readInput(){
-//     string input;
-//     char c;
-//     navigator = history.size();
-
-//     enableRawMode();
-
-//     while(1){
-//         int r = read(STDIN_FILENO, &c, 1);
-//         if(r <= 0) continue;
-
-//         if(c == '\n'){
-//             cout << '\n';
-//             disableRawMode();
-//             return input;
-//         }else if(c == 127 || c == 8){ // 8 also represnt a backspc in asome terminals
-//             if(input.empty() == false){
-//                 input.pop_back();
-//                 cout << "\b \b";
-//             }
-//         }else if(c == 27){
-//             char seq[2];
-//             if(read(STDIN_FILENO,&seq[0], 1) == 0){
-//                 continue;
-//             }
-//             if(read(STDIN_FILENO,&seq[1], 1) == 0){
-//                 continue;
-//             }
-
-//             if(seq[0] == '['){
-//                 if(seq[1] == 'A'){
-//                     if(navigator > 0){
-//                         navigator--;
-//                         cout << "\33[2K\r" ;
-//                         printPrompt();
-//                         input = history[navigator];
-//                         cout << input;
-//                     }
-//                 }else if (seq[1] == 'B') { // ↓ Down arrow
-//                     if (navigator < (int)history.size() - 1) {
-//                         navigator++;
-//                         cout << "\33[2K\r";
-//                         printPrompt();
-//                         input = history[navigator];
-//                         cout << input;
-//                     } else {
-//                         navigator = history.size();
-//                         cout << "\33[2K\r";
-//                         printPrompt();
-//                         input.clear();
-//                     }
-//                 }
-//             }
-//         }else{
-//             input.push_back(c);
-//             cout << c;
-//         }
-//     }
-// }
 
 string readInput() {
     // Save original terminal settings

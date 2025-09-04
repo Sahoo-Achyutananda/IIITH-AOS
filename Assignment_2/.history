@@ -1,20 +1,20 @@
-cd -
+pwd
+clear
+history
+history
+cd test
 history
 clear
-ls | grep .txt > out.txt ; cat < in.txt | wc -l > lines.txt
-cat out.txt
-cat lines.txt
-cat in.txt
+cd ..
+history 
 clear
-cd
-cd test
-cd ~
-cd
-cd
-cd ~
-cd
-cd -
-cd ~
-gedit
-pinfo 47538
-pinfo
+ls -l
+ls -lalala
+ls test
+ls test test2 
+ls -la test test2
+ls -la test test2 ~
+clear
+history
+history 15
+history -9

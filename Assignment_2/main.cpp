@@ -116,7 +116,7 @@ int main(){
         return 0;
     }
     shellHome = cwd; // setting shellHome to the cwd
-    
+    historyPath = string(cwd) + "/.history" ;
     // enableRawMode();// we're entering a black hole
 
     clearScreen();
