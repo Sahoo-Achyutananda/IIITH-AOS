@@ -1,20 +1,20 @@
-pwd
-clear
-history
-history
-cd test
-history
-clear
-cd ..
-history 
-clear
-ls -l
-ls -lalala
-ls test
-ls test test2 
-ls -la test test2
-ls -la test test2 ~
-clear
-history
-history 15
 history -9
+ping www.google.co.in
+pinfo 7194
+clear
+pinfo
+ping www.google.co.in
+pinfo 7337
+pinfo 7336
+gedit
+pinfo 7338
+gedit &
+pinfo 7353
+pinfo 7353
+pinfo 7353
+pinfo 7353
+pinfo 7353
+pinfo 7353
+clear
+histort
+history

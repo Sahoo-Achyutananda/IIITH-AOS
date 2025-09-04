@@ -11,7 +11,8 @@ void printProcessStatus(long long pid) {
 
     int fd = open(path, O_RDONLY);
     if (fd < 0) {
-        perror("open");
+        // perror("open");
+        cerr << fontBold << colorRed << "open : Error opening file - " << path << reset << endl;
         return;
     }
 
@@ -20,6 +21,7 @@ void printProcessStatus(long long pid) {
     close(fd);
     if (n <= 0) {
         perror("read");
+        cerr << fontBold << colorRed << "read : Error reading file - " << path << reset << endl;
         return;
     }
 
@@ -52,7 +54,7 @@ void runPinfo(char **args){
     snprintf(processPath,PATH_MAX, "/proc/%d/stat", pid);
     FILE *fp = fopen(processPath, "r");
     if(!fp){
-        perror("fopen");
+        cerr << fontBold << colorRed << "fopen : Error opening file - " << processPath << reset << endl;
         return;
     }
 
@@ -63,7 +65,7 @@ void runPinfo(char **args){
     snprintf(processPath, PATH_MAX, "/proc/%d/statm", pid);
     fp = fopen(processPath, "r");
     if (fp == NULL) {
-        perror("fopen");
+        cerr << fontBold << colorRed << "fopen : Error opening file - " << processPath << reset << endl;
         return;
     }
     long mem;

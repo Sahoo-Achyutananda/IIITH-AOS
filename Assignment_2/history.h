@@ -240,15 +240,15 @@ string readInput() {
             input += c;
             cout << c << flush;
         }
-        else if (c == 3) {
-            // Ctrl-C
-            cout << "^C" << endl;
-            input.clear();
-            cout << "\033[2K\r";
-            printPrompt();
-            cout << flush;
-            navigator = history.size();
-        }
+        // else if (c == 3) {
+        //     // Ctrl-C
+        //     cout << "^C" << endl;
+        //     input.clear();
+        //     cout << "\033[2K\r";
+        //     printPrompt();
+        //     cout << flush;
+        //     navigator = history.size();
+        // }
     }
     
     // RESTORE original terminal settings before returning
