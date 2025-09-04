@@ -115,7 +115,7 @@ int main(){
         perror("getcwd");
         return 0;
     }
-    shellHome = cwd;
+    shellHome = cwd; // setting shellHome to the cwd
     
     // enableRawMode();// we're entering a black hole
 

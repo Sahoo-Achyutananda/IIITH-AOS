@@ -1,20 +1,20 @@
-cat < in.txt | wc
-cat < in.txt | wc
+cd -
+history
 clear
-cat < in.txt
-ls | grep.txt
-ls | grep .txt
-ls | grep .txt > lines.txt
-cat lines.txt
-cat < lines.txt
-cat < lines.txt | wc
-cat < in.txt
-cat < in.txt | wc -l
-cat < in.txt | wc -l > lines.txt
-cat lines.txt
-clear
-ls | grep .txt > out.txt ; cat < in.txt | wc > lines.txt
-cat < out.txt
+ls | grep .txt > out.txt ; cat < in.txt | wc -l > lines.txt
+cat out.txt
 cat lines.txt
 cat in.txt
 clear
+cd
+cd test
+cd ~
+cd
+cd
+cd ~
+cd
+cd -
+cd ~
+gedit
+pinfo 47538
+pinfo

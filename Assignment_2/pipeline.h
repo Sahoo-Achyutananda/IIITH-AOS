@@ -198,11 +198,11 @@ void executePipeline(char * cmd){
             args.push_back(nullptr);
 
 
-            // Built-in command handling
-            if(strcmp(cmd_name, "pwd") == 0){
-                runPwd();
-                exit(EXIT_SUCCESS);
-            }
+            // Built-in command handling - didnt work becUASE some already handle io wirhin them - its creating a conflict
+            // if(strcmp(cmd_name, "pwd") == 0){
+            //     runPwd();
+            //     exit(EXIT_SUCCESS);
+            // }
             // if(strcmp(cmd_name, "echo") == 0){
             //     runEcho(args.data());
             //     exit(EXIT_SUCCESS);
@@ -211,30 +211,30 @@ void executePipeline(char * cmd){
             //     runCat(args.data());
             //     exit(EXIT_SUCCESS);
             // }
-            if(strcmp(cmd_name, "cd") == 0){
-                runCd(args.data());
-                exit(EXIT_SUCCESS);
-            }
-            if(strcmp(cmd_name, "ls") == 0){
-                runLS(args.data());
-                exit(EXIT_SUCCESS);
-            }
-            if (strcmp(cmd_name, "pinfo") == 0) {
-                runPinfo(args.data());
-                exit(EXIT_SUCCESS);
-            }
-            if(strcmp(cmd_name, "search") == 0){
-                searchFileHelper(args.data());
-                exit(EXIT_SUCCESS); 
-            }
-            if(strcmp(cmd_name, "history") == 0){
-                printHistory(args.data());
-                exit(EXIT_SUCCESS);
-            }
-            if(strcmp(cmd_name, "sort") == 0){
-                sortIO(args.data());
-                exit(EXIT_SUCCESS);
-            }
+            // if(strcmp(cmd_name, "cd") == 0){
+            //     runCd(args.data());
+            //     exit(EXIT_SUCCESS);
+            // }
+            // if(strcmp(cmd_name, "ls") == 0){
+            //     runLS(args.data());
+            //     exit(EXIT_SUCCESS);
+            // }
+            // if (strcmp(cmd_name, "pinfo") == 0) {
+            //     runPinfo(args.data());
+            //     exit(EXIT_SUCCESS);
+            // }
+            // if(strcmp(cmd_name, "search") == 0){
+            //     searchFileHelper(args.data());
+            //     exit(EXIT_SUCCESS); 
+            // }
+            // if(strcmp(cmd_name, "history") == 0){
+            //     printHistory(args.data());
+            //     exit(EXIT_SUCCESS);
+            // }
+            // if(strcmp(cmd_name, "sort") == 0){
+            //     sortIO(args.data());
+            //     exit(EXIT_SUCCESS);
+            // }
 
             // External command
             execvp(args[0], args.data());

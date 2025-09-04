@@ -22,6 +22,6 @@
 #include <sys/wait.h>
 
 const long long CHAR_LEN_MAX = 256;
-std::string shellHome;
+std::string shellHome; // it'll be set by the main function - cannot hard code it coz path may change if kept in another directory
 
 #endif // HEADERS_H;

@@ -18,17 +18,16 @@ void runCd(char * args[]){
     }
 
     string targetDir;
-
-    if(count == 1 || strcmp(args[1], "~") == 0){
-        // const char *home = getenv("HOME");
-        // if(home)
-            targetDir = shellHome;
-        // else
-        //     targetDir = "/";
+    if(count == 1){
+        const char *home = getenv("HOME");
+        targetDir = home;
+    }
+    else if(strcmp(args[1], "~") == 0){
+            targetDir = shellHome; // shell home is declared globally in headers.h
     }
     else if(strcmp(args[1], "-") == 0){
         if(prevDir.empty()){
-            cerr << "cd  : OLDPWD not set" << endl;
+            cerr << fontBold << colorRed <<  "cd : OLDPWD not set" << reset << endl;
             return;
         }
         targetDir = prevDir;
@@ -39,13 +38,15 @@ void runCd(char * args[]){
     char currDir[PATH_MAX];
     char * c = getcwd(currDir, PATH_MAX);
     if(!c){
-        perror("getcwd");
+        cerr << fontBold << colorRed <<  "getcwd : Error fetching current working directory" << reset << endl;
         return;
     }
 
+
+    // handling directory changing at the end
     int t = chdir(targetDir.c_str());
     if(t!=0){
-        perror("cd");
+        cerr << fontBold << colorRed <<  "chdir : Error changing directory" << reset << endl;
     }else{
         prevDir = currDir;
     }
