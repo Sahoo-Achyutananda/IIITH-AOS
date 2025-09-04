@@ -41,6 +41,11 @@ bool searchFile( char *path, const char * target){
 }
 
 void searchFileHelper(char **args){
+    int argc = countArgs(args);
+    if(argc > 2){
+        cerr << fontBold << colorRed << "Usage : search <file_name/folder_name>" << reset << endl;
+        return;
+    }
     if(args[1] == NULL){
         cerr << colorRed << fontBold << "WRONG USAGE : Missing Argument <filename>" <<  reset << endl ;
         return;

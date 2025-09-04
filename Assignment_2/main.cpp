@@ -39,6 +39,22 @@ void runCommand(char * cmd){
         }
         token = strtok_r(NULL, delimiter, &save);
     }
+
+    // handling " " <atleast trying to> for grep
+    // while(token){
+    //     if(strcmp(token, "&") == 0){
+    //         bgProcess = true; 
+    //     } else {
+    //         int len = strlen(token);
+    //         if(len > 1 && ((token[0] == '"' && token[len-1] == '"'))) {
+    //             token[len-1] = '\0';
+    //             token++;
+    //         }
+    //         args[i++] = token;
+    //     }
+    //     token = strtok_r(NULL, delimiter, &save);
+    // }
+
     args[i] = NULL;  // Without it,runEcho keep reading garbage memory.
     if(args[0] == NULL) return;
 

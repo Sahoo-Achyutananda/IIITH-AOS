@@ -25,5 +25,13 @@ const long long CHAR_LEN_MAX = 256;
 std::string shellHome; // it'll be set by the main function - cannot hard code it coz path may change if kept in another directory
 std::string historyPath;
 
+int countArgs(char *arg[]) {
+    int count = 0;
+    while(arg[count] != NULL) {
+        count++;
+    }
+    return count;
+}
+
 
 #endif // HEADERS_H;

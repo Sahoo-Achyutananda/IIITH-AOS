@@ -18,11 +18,11 @@ void printPrompt(){
 
     int host = gethostname(hostName,CHAR_LEN_MAX);
     if(host == -1){
-        cerr << "Error extracting host-name" << endl;
+        cerr << fontBold << colorRed << "Error extracting host-name" << reset << endl;
     }
     char* c = getcwd(currentDirectory, CHAR_LEN_MAX);
     if(!c){
-        cerr << "Error extracting current directory ! " << endl;
+        cerr << fontBold << colorRed << "Error extracting current directory ! " << reset << endl;
     }
 
 

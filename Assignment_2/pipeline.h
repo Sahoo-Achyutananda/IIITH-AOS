@@ -89,16 +89,16 @@ void executePipeline(char * cmd){
 
     // debug - 
 
-    for(int i = 0; i < cmds.size(); i++){
-        for(int j = 0; j < cmds[i].argv.size(); j++){
-            cout << cmds[i].argv[j] << " " ;
-        }
-        cout << endl;
+    // for(int i = 0; i < cmds.size(); i++){
+    //     for(int j = 0; j < cmds[i].argv.size(); j++){
+    //         cout << cmds[i].argv[j] << " " ;
+    //     }
+    //     cout << endl;
 
-        cout << cmds[i].inputFile << endl;
-        cout << cmds[i].outputFile << endl;
-        cout << cmds[i].append << endl;
-    }
+    //     cout << cmds[i].inputFile << endl;
+    //     cout << cmds[i].outputFile << endl;
+    //     cout << cmds[i].append << endl;
+    // }
 
     /////////////////////////////
 

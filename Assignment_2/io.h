@@ -61,7 +61,11 @@ void echoIOAppend(char * fileName, char *arg[], int symbolPos){
 }
 
 void runCat(char * arg[]){
-
+    int argc = countArgs(arg);
+    if(argc < 2 || argc > 3){
+        cerr << fontBold << colorRed << "Usage : cat <file_name> or cat < <file_name>" << reset << endl;
+        return;
+    }
     char *fileName;
 
     if(strcmp(arg[1], "<") != 0)
@@ -102,13 +106,28 @@ void runCat(char * arg[]){
 
 
 void sortIO(char * arg[]){
-    char * sourceFile = arg[1];
-    char * destinationFile = arg[3];
-
-    if(strcmp(arg[2], ">") != 0 ){
-        cerr << fontBold << colorRed << "Usage : sort <source_filename> > <destination_filename>" << reset << endl;
+    int argc = countArgs(arg);
+    if(argc < 4 || argc > 5){
+        cerr << fontBold << colorRed << "Usage : sort <source_filename> > <destination_filename> OR sort < <source_filename> > <destination_filename>" << reset << endl;
         return;
     }
+    char * sourceFile;
+    char * destinationFile;
+    if(strcmp(arg[1], "<") == 0 && strcmp(arg[3], ">") == 0){
+        sourceFile = arg[2];
+        destinationFile = arg[4];
+    }else if(strcmp(arg[2], ">") == 0 ){
+        sourceFile = arg[1];
+        destinationFile = arg[3];
+    }else{
+        cerr << fontBold << colorRed << "Usage : sort <source_filename> > <destination_filename> OR sort < <source_filename> > <destination_filename>" << reset << endl;
+        return;
+    }
+
+    // if(strcmp(arg[2], ">") != 0 ){
+    //     cerr << fontBold << colorRed << "Usage : sort <source_filename> > <destination_filename>" << reset << endl;
+    //     return;
+    // }
 
     if(sourceFile == NULL || destinationFile == NULL){
         cerr << fontBold << colorRed << "Usage : sort <source_filename> > <destination_filename>" << reset << endl;
@@ -182,40 +201,40 @@ void sortIO(char * arg[]){
 //     }
 // }
 
-void runEchoSimple(char *arg[]) {
-    for(int i = 1; arg[i] != nullptr; i++) {
-        write(STDOUT_FILENO, arg[i], strlen(arg[i]));
-        if(arg[i+1] != nullptr) {
-            write(STDOUT_FILENO, " ", 1);
-        }
-    }
-    write(STDOUT_FILENO, "\n", 1);
-}
+// void runEchoSimple(char *arg[]) {
+//     for(int i = 1; arg[i] != nullptr; i++) {
+//         write(STDOUT_FILENO, arg[i], strlen(arg[i]));
+//         if(arg[i+1] != nullptr) {
+//             write(STDOUT_FILENO, " ", 1);
+//         }
+//     }
+//     write(STDOUT_FILENO, "\n", 1);
+// }
 
-void runCatSimple(char * arg[]) {
-    int i = 1;
-    while(arg[i] != NULL) {
-        // Only process non-redirection arguments
-        if(strcmp(arg[i], "<") == 0 || strcmp(arg[i], ">") == 0 || strcmp(arg[i], ">>") == 0) {
-            i += 2; // skip symbol and filename
-            continue;
-        }
+// void runCatSimple(char * arg[]) {
+//     int i = 1;
+//     while(arg[i] != NULL) {
+//         // Only process non-redirection arguments
+//         if(strcmp(arg[i], "<") == 0 || strcmp(arg[i], ">") == 0 || strcmp(arg[i], ">>") == 0) {
+//             i += 2; // skip symbol and filename
+//             continue;
+//         }
         
-        int fd = open(arg[i], O_RDONLY);
-        if(fd < 0) {
-            cerr << fontBold << colorRed << "Erroe Opening FIle" << reset << endl;
-            i++;
-            continue;
-        }
+//         int fd = open(arg[i], O_RDONLY);
+//         if(fd < 0) {
+//             cerr << fontBold << colorRed << "Erroe Opening FIle" << reset << endl;
+//             i++;
+//             continue;
+//         }
         
-        char buffer[1024];
-        ssize_t bytes;
-        while((bytes = read(fd, buffer, sizeof(buffer))) > 0) {
-            write(STDOUT_FILENO, buffer, bytes);
-        }
+//         char buffer[1024];
+//         ssize_t bytes;
+//         while((bytes = read(fd, buffer, sizeof(buffer))) > 0) {
+//             write(STDOUT_FILENO, buffer, bytes);
+//         }
         
-        close(fd);
-        i++;
-    }
-}
+//         close(fd);
+//         i++;
+//     }
+// }
 #endif // IO_H

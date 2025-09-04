@@ -119,6 +119,12 @@ void printHistory(char *args[]){
     // debug - 
     // cout << historyPath << endl;
 
+    int argc = countArgs(args);
+    if(argc > 2){
+        cerr << fontBold << colorRed << "Usage : history OR history <limit>" << reset << endl;
+        return;
+    }
+
     if(args[1] == NULL){
         // for(int i =0; i < history.size(); i++){
         //     cout << history[i] << endl;

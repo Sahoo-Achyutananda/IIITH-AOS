@@ -30,6 +30,7 @@ void runCd(char * args[]){
             cerr << fontBold << colorRed <<  "cd : OLDPWD not set" << reset << endl;
             return;
         }
+        cout << fontBold << colorBlue << prevDir << reset << endl;
         targetDir = prevDir;
     }else{
         targetDir = args[1];
@@ -41,7 +42,6 @@ void runCd(char * args[]){
         cerr << fontBold << colorRed <<  "getcwd : Error fetching current working directory" << reset << endl;
         return;
     }
-
 
     // handling directory changing at the end
     int t = chdir(targetDir.c_str());
@@ -60,7 +60,7 @@ void runPwd(){
     if(c != NULL){
         cout << cwd << endl;
     }else{
-        cerr << "Error getting Current directory ! " << endl;
+        cerr << fontBold << colorRed << "Error getting Current directory ! " << reset << endl;
     }
 }
 

@@ -1,20 +1,20 @@
-history -9
-ping www.google.co.in
-pinfo 7194
+pinfo 15167
+pinfo 14755
+cd
+cd ~
+cd           ~
+cd             ..
+cd                                  Assignment_2
 clear
-pinfo
-ping www.google.co.in
-pinfo 7337
-pinfo 7336
-gedit
-pinfo 7338
-gedit &
-pinfo 7353
-pinfo 7353
-pinfo 7353
-pinfo 7353
-pinfo 7353
-pinfo 7353
+ls -l | grep .txt > out.txt
+cat out.txt
 clear
-histort
-history
+exir
+grep .txt out.txt
+grep ".txt" out.txt
+echo "hello"
+echo hello
+echo """"""""""""""""hello"""""""""""""""""""
+clear
+echo "hello"
+git add .

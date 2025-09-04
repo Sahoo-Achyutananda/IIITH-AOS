@@ -11,7 +11,6 @@ void printProcessStatus(long long pid) {
 
     int fd = open(path, O_RDONLY);
     if (fd < 0) {
-        // perror("open");
         cerr << fontBold << colorRed << "open : Error opening file - " << path << reset << endl;
         return;
     }
@@ -41,6 +40,11 @@ void printProcessStatus(long long pid) {
 }
 
 void runPinfo(char **args){
+    int argc = countArgs(args);
+    if(argc > 2){
+        cerr << fontBold << colorRed << "Usage : pinfo OR pinfo <pid>" << reset << endl;
+        return;
+    }
     long long pid;
 
     if(args[1] == NULL){
@@ -48,7 +52,10 @@ void runPinfo(char **args){
     }else{
         pid = atoi(args[1]);
     }
-
+    if(pid == 0){
+        cerr << fontBold << colorRed << "Enter a valid PID" << reset << endl;
+        return;
+    }
     char processPath[PATH_MAX];
 
     snprintf(processPath,PATH_MAX, "/proc/%d/stat", pid);
