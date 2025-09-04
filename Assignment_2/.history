@@ -1,20 +1,20 @@
-pinfo 15167
-pinfo 14755
+git commit -m "A2 Fixes"
+git commit -m "A2 Fixes"
+git status
+git commit -m "A2 Fixes and more"
+clear
+git commit -m "A2 Fixes and more"
+echo "hello"
+git commit -m "A2 Fixes"
+search pinfo.h
+search hh
+searcg hbjb jbajb
+search hh hh
+clear
+history
+cd ~
 cd
 cd ~
-cd           ~
-cd             ..
-cd                                  Assignment_2
+history -5
+history 5
 clear
-ls -l | grep .txt > out.txt
-cat out.txt
-clear
-exir
-grep .txt out.txt
-grep ".txt" out.txt
-echo "hello"
-echo hello
-echo """"""""""""""""hello"""""""""""""""""""
-clear
-echo "hello"
-git add .

@@ -7,7 +7,7 @@ using namespace std;
 
 void printProcessStatus(long long pid) {
     char path[PATH_MAX];
-    snprintf(path, sizeof(path), "/proc/%d/stat", pid);
+    snprintf(path, sizeof(path), "/proc/%lld/stat", pid);
 
     int fd = open(path, O_RDONLY);
     if (fd < 0) {
@@ -58,7 +58,7 @@ void runPinfo(char **args){
     }
     char processPath[PATH_MAX];
 
-    snprintf(processPath,PATH_MAX, "/proc/%d/stat", pid);
+    snprintf(processPath,PATH_MAX, "/proc/%lld/stat", pid);
     FILE *fp = fopen(processPath, "r");
     if(!fp){
         cerr << fontBold << colorRed << "fopen : Error opening file - " << processPath << reset << endl;
@@ -69,7 +69,7 @@ void runPinfo(char **args){
     fscanf(fp, "%*d %*s %*c %d", &ppid); 
     fclose(fp);
 
-    snprintf(processPath, PATH_MAX, "/proc/%d/statm", pid);
+    snprintf(processPath, PATH_MAX, "/proc/%lld/statm", pid);
     fp = fopen(processPath, "r");
     if (fp == NULL) {
         cerr << fontBold << colorRed << "fopen : Error opening file - " << processPath << reset << endl;
@@ -79,7 +79,7 @@ void runPinfo(char **args){
     fscanf(fp, "%ld", &mem);
     fclose(fp);
 
-    snprintf(processPath, PATH_MAX, "/proc/%d/exe", pid);
+    snprintf(processPath, PATH_MAX, "/proc/%lld/exe", pid);
     char exePath[PATH_MAX];
     ssize_t len = readlink(processPath, exePath, sizeof(exePath) - 1);
     if (len != -1) {
@@ -88,7 +88,7 @@ void runPinfo(char **args){
         strcpy(exePath, "Executable path not found");
     }
 
-    printf("pid -- %d\n", pid);
+    printf("pid -- %lld\n", pid);
     printProcessStatus(pid);
     // printf("Process Status -- %c\n", state);
     printf("memory -- %ld\n", mem);

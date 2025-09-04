@@ -6,7 +6,7 @@
 
 using namespace std;
 
-bool searchFile( char *path, const char * target){
+bool searchFile(const char *path, const char * target){
     DIR* dir = opendir(path);
     if(!dir) return false;
 
@@ -53,7 +53,8 @@ void searchFileHelper(char **args){
 
     char * target = args[1];
     // .  : signifies current directory 
-    if (searchFile(".", args[1])) {
+    const char * currDir = ".";
+    if (searchFile(currDir, args[1])) {
         cout << "True" << endl;
     } else {
         cout << "False" << endl;

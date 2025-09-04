@@ -40,7 +40,7 @@ void runCommand(char * cmd){
         token = strtok_r(NULL, delimiter, &save);
     }
 
-    // handling " " <atleast trying to> for grep
+    // handling " " <atleast trying to> for grep 
     // while(token){
     //     if(strcmp(token, "&") == 0){
     //         bgProcess = true; 
@@ -58,7 +58,10 @@ void runCommand(char * cmd){
     args[i] = NULL;  // Without it,runEcho keep reading garbage memory.
     if(args[0] == NULL) return;
 
-
+    if (strcmp(args[0], "clear") == 0){
+        clearScreen();
+        return;
+    }
     if(strcmp(args[0], "pwd") == 0){
         runPwd();
         return;
